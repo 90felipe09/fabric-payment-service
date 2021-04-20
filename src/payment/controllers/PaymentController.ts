@@ -1,3 +1,5 @@
+import { X509Provider } from "fabric-network/lib/impl/wallet/x509identity";
+import { TorrentePaymentReceivedSocket } from "../connections/TorrentePaymentReceivedSocket";
 import { Commitment } from "../models/Commitment";
 import { HashChain } from "../models/HashChain";
 
@@ -6,35 +8,63 @@ export class PaymentController {
     hashChain: HashChain;
 
     public constructor (
+        ip: string,
         receiverPublicKey: string,
+        paymentSize: number,
         userPrivateKey: string,
-        paymentSize: number) {
+        torrentId: string
+        ) {
         this.hashChain = new HashChain(paymentSize);
-        this.commitment = this.createCommitmentToUploader(
+        this.createCommitmentToUploader(
+            torrentId,
             receiverPublicKey, 
-            userPrivateKey, 
-            this.hashChain.getHashRoot());
+            this.hashChain.getHashRoot(),
+            userPrivateKey).then(this.setCommitment);
+    }
+
+    private setCommitment (commitment: Commitment) {
+        this.commitment = commitment;
     }
 
     public payHash() {
         return this.hashChain.payHash();
     }
 
-    private createCommitmentToUploader(
+    public isSeekingInstance(receiverPublicKey: string, torrentId: string){
+        return (
+            this.getReceiver() === receiverPublicKey && 
+            this.getTorrent() === torrentId);
+    }
+
+    public getReceiver() {
+        return this.commitment.content.receiverPublicKey;
+    }
+
+    public getTorrent() {
+        return this.commitment.content.torrentId;
+    }
+
+    private async createCommitmentToUploader(
+        torrentId: string,
         receiverPublicKey: string,
-        userPrivateKey: string,
-        hashRoot: string) : Commitment {
+        hashRoot: string,
+        userPrivateKey: string
+        ) : Promise<Commitment> {
+        const userIdentityProvider = new X509Provider();
+        const cryptoSuite = userIdentityProvider.getCryptoSuite();
+        const privateKey = await cryptoSuite.getKey(userPrivateKey);
         const commitmentContent = {
-            payerPublicKey: getPublicKey(userPrivateKey),
+            torrentId: torrentId,
+            payerPublicKey: cryptoSuite.deriveKey(privateKey).toBytes().toString(),
             receiverPublicKey: receiverPublicKey,
             hashRoot: hashRoot
         };
-
-        const contentSignature = signObject(commitmentContent, userPrivateKey);
+        const bufferCommitment = Buffer.from(JSON.stringify(commitmentContent));
+        const contentSignature = cryptoSuite.sign(privateKey, bufferCommitment);
 
         return {
             content: commitmentContent,
-            signature: contentSignature
+            signature: contentSignature.toString()
         }
     }
 }
