@@ -10,7 +10,7 @@ export class HashChain {
         for (let index = 0; index < size; index++) {
             this.hashes.push(sha256(this.hashes[index]).toString());
         }
-        this.hashToPay = size;
+        this.hashToPay = size - 1;
     }
 
     public payHash(): string {
