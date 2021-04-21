@@ -6,7 +6,7 @@ There are two models in this service:
 
 ### Commitment
 
-It's an object type that defines which data must be present in a commitment to send to the smart contract. It's purpose is to declare download intention from the receiver Public Key;
+It's a class that represents a commitment to send to the smart contract. It's purpose is to declare download intention from the receiver Public Key. It has a static method to assert message integrity and authenticity.;
 
 ### HashChain
 

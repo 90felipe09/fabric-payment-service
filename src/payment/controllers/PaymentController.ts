@@ -1,5 +1,3 @@
-import { X509Provider } from "fabric-network/lib/impl/wallet/x509identity";
-import { TorrentePaymentReceivedSocket } from "../connections/TorrentePaymentReceivedSocket";
 import { Commitment } from "../models/Commitment";
 import { HashChain } from "../models/HashChain";
 
@@ -15,15 +13,11 @@ export class PaymentController {
         torrentId: string
         ) {
         this.hashChain = new HashChain(paymentSize);
-        this.createCommitmentToUploader(
-            torrentId,
+        this.commitment = new Commitment(
+            torrentId, 
             receiverPublicKey, 
-            this.hashChain.getHashRoot(),
-            userPrivateKey).then(this.setCommitment);
-    }
-
-    private setCommitment (commitment: Commitment) {
-        this.commitment = commitment;
+            this.hashChain.getHashRoot(), 
+            userPrivateKey)
     }
 
     public payHash() {
@@ -32,39 +26,7 @@ export class PaymentController {
 
     public isSeekingInstance(receiverPublicKey: string, torrentId: string){
         return (
-            this.getReceiver() === receiverPublicKey && 
-            this.getTorrent() === torrentId);
-    }
-
-    public getReceiver() {
-        return this.commitment.content.receiverPublicKey;
-    }
-
-    public getTorrent() {
-        return this.commitment.content.torrentId;
-    }
-
-    private async createCommitmentToUploader(
-        torrentId: string,
-        receiverPublicKey: string,
-        hashRoot: string,
-        userPrivateKey: string
-        ) : Promise<Commitment> {
-        const userIdentityProvider = new X509Provider();
-        const cryptoSuite = userIdentityProvider.getCryptoSuite();
-        const privateKey = await cryptoSuite.getKey(userPrivateKey);
-        const commitmentContent = {
-            torrentId: torrentId,
-            payerPublicKey: cryptoSuite.deriveKey(privateKey).toBytes().toString(),
-            receiverPublicKey: receiverPublicKey,
-            hashRoot: hashRoot
-        };
-        const bufferCommitment = Buffer.from(JSON.stringify(commitmentContent));
-        const contentSignature = cryptoSuite.sign(privateKey, bufferCommitment);
-
-        return {
-            content: commitmentContent,
-            signature: contentSignature.toString()
-        }
+            this.commitment.getReceiver() === receiverPublicKey && 
+            this.commitment.getTorrent() === torrentId);
     }
 }
