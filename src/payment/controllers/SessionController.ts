@@ -1,10 +1,8 @@
-import { X509Provider } from "fabric-network/lib/impl/wallet/x509identity";
 import { TorrentePaymentReceivedSocket } from "../connections/TorrentePaymentReceivedSocket";
 import { PaymentController } from "./PaymentController";
 import { ReceiverController } from "./ReceiverController";
 
 export class SessionController {
-    loadedUserIdentity: X509Provider;
     loadedUserKey: string;
     receivingListeners: ReceiverController[];
     payingControllers: PaymentController[];
@@ -12,7 +10,6 @@ export class SessionController {
 
     public constructor (userPrivateKey: string){
         this.loadedUserKey = userPrivateKey;
-        this.loadedUserIdentity = new X509Provider();
         this.torrenteSocket = new TorrentePaymentReceivedSocket();
     }
 
