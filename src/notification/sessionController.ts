@@ -24,7 +24,7 @@ export class sessionController {
             try{
                 wss.on('connection', (ws: WebSocket) => {
                     this.torrenteConnection = ws;
-
+                    console.log("connected to Torrente")
                     //connection is up, let's add a simple simple event
                     ws.on('message', (message: string) => {
 
@@ -32,6 +32,10 @@ export class sessionController {
 
                         //log the received message
                         console.log('received: %s', message);
+                    });
+
+                    ws.on("close", ()=>{
+                        console.log("disconnected from Torrente");
                     });
 
                     const object = { 
@@ -47,7 +51,7 @@ export class sessionController {
                 });
 
                 server.listen( 7933, () => {
-                    console.log("Server started on port: (${process.env.PORT || 8080})");
+                    console.log("Server started on port: 7933");
                 });
                 resolve("success");
                
