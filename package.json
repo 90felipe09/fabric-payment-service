@@ -23,6 +23,7 @@
     "typescript": "4.2.3"
   },
   "dependencies": {
+    "@types/ws": "^7.4.4",
     "express": "^4.16.4",
     "fabric-network": "^2.2.5"
   }
