@@ -1,4 +1,4 @@
-import WebSocket, { Server } from 'ws';
+import WebSocket from 'ws';
 import express from 'express';
 import http from 'http';
 
