@@ -1,4 +1,3 @@
-import { TorrentePaymentReceivedSocket } from "../connections/TorrentePaymentReceivedSocket";
 import { PaymentController } from "./PaymentController";
 import { ReceiverController } from "./ReceiverController";
 
@@ -6,11 +5,9 @@ export class SessionController {
     loadedUserKey: string;
     receivingListeners: ReceiverController[];
     payingControllers: PaymentController[];
-    torrenteSocket: TorrentePaymentReceivedSocket;
 
     public constructor (userPrivateKey: string){
         this.loadedUserKey = userPrivateKey;
-        this.torrenteSocket = new TorrentePaymentReceivedSocket();
     }
 
     public payUploader(uploaderPublicKey: string, torrentId: string){
@@ -24,8 +21,7 @@ export class SessionController {
     public addReceivingListener(ip: string, payerPublicKey: string){
         const newReceiverListener = new ReceiverController(
             ip, 
-            payerPublicKey,
-            this.torrenteSocket);
+            payerPublicKey);
         this.receivingListeners.push(newReceiverListener);
     }
 
@@ -42,6 +38,6 @@ export class SessionController {
             this.loadedUserKey,
             torrentId)
 
-        this.payingControllers.push();
+        this.payingControllers.push(newPaymentController);
     }
 }
