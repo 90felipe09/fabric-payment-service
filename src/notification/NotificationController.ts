@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
+import { TORRENTE_NOTIFICATION_PORT } from '../config';
 import { ConnectionNotification } from './models/ConnectionNotification';
 import { PaymentNotification } from './models/PaymentNotification';
 
@@ -19,8 +20,8 @@ export class NotificationController {
         
         return new Promise((resolve, reject) => {
             try{
-                server.listen(7933, () => {
-                    console.log("Notification port open on: 7933");
+                server.listen(TORRENTE_NOTIFICATION_PORT, () => {
+                    console.log(`Notification port open on: ${TORRENTE_NOTIFICATION_PORT}`);
                 });
                 wss.on('connection', (ws: WebSocket) => {
                     this.torrenteConnection = ws;
