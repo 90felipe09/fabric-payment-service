@@ -1,8 +1,9 @@
 import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
-import { TORRENTE_NOTIFICATION_PORT } from '../config';
+import { PAYFLUXO_EXTERNAL_PORT, PAYFLUXO_LISTENING_PORT, TORRENTE_NOTIFICATION_PORT } from '../config';
 import { ConnectionNotification } from './models/ConnectionNotification';
+import { NATNotification } from './models/NATNotification';
 import { PaymentNotification } from './models/PaymentNotification';
 
 export class NotificationController {
@@ -44,13 +45,22 @@ export class NotificationController {
         });
     }
 
+    notifyNATIssue() {
+        const notificationObject = new NATNotification({
+            message: `Couldn't open port on NAT. Please, map internal port ${PAYFLUXO_LISTENING_PORT} to external port ${PAYFLUXO_EXTERNAL_PORT}`
+        });
+
+        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());        
+        this.torrenteConnection.send(jsonNotification);
+    }
+
     notifyConnection() {
         const notificationObject = new ConnectionNotification({
             status: "connected"
         });
 
-        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject())             
-        this.torrenteConnection.send(jsonNotification)
+        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());          
+        this.torrenteConnection.send(jsonNotification);
     }
 
     notifyPayment(ip: string, torrentId: string){
@@ -59,8 +69,8 @@ export class NotificationController {
             torrentId: torrentId
         });
 
-        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject())             
-        this.torrenteConnection.send(jsonNotification)
+        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());           
+        this.torrenteConnection.send(jsonNotification);
     }
 
 }
