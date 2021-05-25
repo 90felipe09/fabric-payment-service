@@ -10,12 +10,9 @@ var con = new ConnectionController;
 
 con.openConnection().then( (connection:WebSocket) => {
   console.log("resolved");
-  try { tryNatTraversal(); } 
-  catch(e){ con.notificationHandler.notifyNATIssue(); }
 }).catch( (error) => {
     console.log("Rejected:", error)
 });
-
 
 server.listen( 7777, () => {
   console.log("Server started on port: 7777")
