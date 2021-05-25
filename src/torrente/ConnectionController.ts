@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
 import { TORRENTE_NOTIFICATION_PORT } from '../config';
-import { tryNatTraversal } from '../payment/connections/NatTraversalHandler';
+import { tryNatTraversal } from './NatTraversalHandler';
 import { MessagesHandler } from './messages/MessagesHandler';
 import { NotificationHandler } from './notification/NotificationHandler';
 
