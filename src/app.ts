@@ -1,19 +1,17 @@
 import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
-import { NotificationController } from './notification/NotificationController';
 import { tryNatTraversal } from './payment/connections/NatTraversalHandler';
-import { startPayfluxoServer } from './payment/connections/PayfluxoServer';
+import { ConnectionController } from './torrente/ConnectionController';
 
 const app = express();
 const server = http.createServer(app);
-var con = new NotificationController;
+var con = new ConnectionController;
 
 con.openConnection().then( (connection:WebSocket) => {
   console.log("resolved");
   try { tryNatTraversal(); } 
-  catch(e){ con.notifyNATIssue(); }
-  startPayfluxoServer();
+  catch(e){ con.notificationHandler.notifyNATIssue(); }
 }).catch( (error) => {
     console.log("Rejected:", error)
 });
@@ -24,5 +22,5 @@ server.listen( 7777, () => {
 }) 
 
 app.get('/test', (req, res) => {
-  con.notifyPayment("182.16.15.12", "test")
+  con.notificationHandler.notifyPayment("182.16.15.12", "test")
 })
