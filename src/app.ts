@@ -1,7 +1,6 @@
 import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
-import { tryNatTraversal } from './payment/connections/NatTraversalHandler';
 import { ConnectionController } from './torrente/ConnectionController';
 
 const app = express();
