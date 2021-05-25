@@ -1,13 +1,23 @@
-import { PaymentController } from "./PaymentController";
-import { ReceiverController } from "./ReceiverController";
+import { PaymentHandler } from "./PaymentHandler";
+import { ReceiverHandler } from "./ReceiverHandler";
 
 export class SessionController {
     loadedUserKey: string;
-    receivingListeners: ReceiverController[];
-    payingControllers: PaymentController[];
+    receivingListeners: ReceiverHandler[];
+    payingControllers: PaymentHandler[];
 
     public constructor (userPrivateKey: string){
         this.loadedUserKey = userPrivateKey;
+    }
+
+    public handleReceive(){
+        // TODO
+        return;
+    }
+
+    public handleCommit(){
+        // TODO
+        return;
     }
 
     public payUploader(uploaderPublicKey: string, torrentId: string){
@@ -19,7 +29,7 @@ export class SessionController {
     }
 
     public addReceivingListener(ip: string, payerPublicKey: string){
-        const newReceiverListener = new ReceiverController(
+        const newReceiverListener = new ReceiverHandler(
             ip, 
             payerPublicKey);
         this.receivingListeners.push(newReceiverListener);
@@ -31,7 +41,7 @@ export class SessionController {
         numberOfBlocks: number,
         torrentId: string
         ){
-        const newPaymentController = new PaymentController(
+        const newPaymentController = new PaymentHandler(
             ip,
             receiverPublicKey, 
             numberOfBlocks, 

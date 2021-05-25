@@ -1,7 +1,7 @@
 import { Commitment } from "../models/Commitment";
 import { HashChain } from "../models/HashChain";
 
-export class PaymentController {
+export class PaymentHandler {
     commitment: Commitment;
     hashChain: HashChain;
 
@@ -29,4 +29,5 @@ export class PaymentController {
             this.commitment.getReceiver() === receiverPublicKey && 
             this.commitment.getTorrent() === torrentId);
     }
+
 }
