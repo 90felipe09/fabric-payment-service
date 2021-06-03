@@ -1,0 +1,8 @@
+{
+    "data": {
+        "uploaderIp": "127.0.0.1",
+        "magneticLink": "magneticLinkBlabla",
+        "fileSize": 32768
+    },
+    "type": "DownloadedBlock"
+}

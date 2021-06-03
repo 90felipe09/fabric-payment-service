@@ -1,6 +1,6 @@
 import axios from 'axios';
 import WebSocket from "ws";
-import { PAYFLUXO_EXTERNAL_PORT } from "../../config";
+import { PAYFLUXO_LISTENING_PORT } from "../../config";
 import { startPayfluxoServer } from "../../payment/connections/PayfluxoServer";
 import { SessionController } from "../../payment/controllers/SessionController";
 import { MicropaymentRequest } from "../../payment/models/MicropaymentRequest";
@@ -35,20 +35,16 @@ export class MessagesHandler{
     }
 
     private handleDownloadedBlock = async (data: IDownloadedBlockMessageData) => {
-        const peerEndpoint = `${data.uploaderIp}:${PAYFLUXO_EXTERNAL_PORT}`;
+        // const peerEndpoint = `http://${data.uploaderIp}:${PAYFLUXO_EXTERNAL_PORT}`; // prod
+        const peerEndpoint = `http://${data.uploaderIp}:${PAYFLUXO_LISTENING_PORT}`; // teste
         const uploaderHash = `${data.magneticLink}@${data.uploaderIp}`
-        // verifica se tem um payment handler para o torrent especificado e ip
-        const uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
-        // caso tenha, apenas aciona o payment handler e envia mais um hash para o ip:9003/pay
-        // caso não tenha, envia requisição ao ip:9003/commitment
+        var uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
         if(!uploaderToPay){
-            // verifica se tem o certificado do cara no cache
-            // se não tiver, pede pelo certificado
-            const certificateResponse = await axios.get(`${peerEndpoint}/key`);
+            const certificateResponse = await axios.get(`${peerEndpoint}/certificate`);
             const uploaderCertificate = certificateResponse.data['certificate'];
             this.sessionController.addpaymentHandlers(data.uploaderIp, uploaderCertificate, data.fileSize, data.magneticLink);
-            const uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
-            const commitmentResponse = await axios.post(`${peerEndpoint}/commitment`, uploaderToPay.commitment.commitmentMessage);
+            uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
+            const commitmentResponse = await axios.post(`${peerEndpoint}/commit`, uploaderToPay.commitment.commitmentMessage);
         }
         const [hashLinkToPay, hashLinkIndex] = uploaderToPay.payHash();
         const paymentMessage: MicropaymentRequest = {
@@ -57,11 +53,13 @@ export class MessagesHandler{
             magneticLink: data.magneticLink
         }
 
-        await axios.post(`${peerEndpoint}/pay`, paymentMessage);
+        const paymentResponse = await axios.post(`${peerEndpoint}/pay`, paymentMessage);
+
+        console.log(`[INFO] Paid ip ${data.uploaderIp} for a block from torrent ${data.magneticLink}`)
     }
 
     private handleAuthentication = (data: IAuthenticatedMessageData) => {
-        this.sessionController = startPayfluxoServer(data.privateKey, data.certificate, data.orgMSP);
+        this.sessionController = startPayfluxoServer(data.privateKey, data.certificate, data.orgMSP, this.notificationHandler);
         tryNatTraversal().catch((err) => {
             console.log("[ERROR]: ", err.message) 
             this.notificationHandler.notifyNATIssue();

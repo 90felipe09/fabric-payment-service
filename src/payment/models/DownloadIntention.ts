@@ -1,4 +1,4 @@
 export type DownloadIntention = {
-    torrentId: string,
+    magneticLink: string,
     signature: string
 }

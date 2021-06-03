@@ -7,27 +7,32 @@ export class PaymentHandler {
 
     public constructor (
         ip: string,
-        receiverPublicKey: string,
+        receiverCertificate: string,
         paymentSize: number,
         userPrivateKey: string,
-        torrentId: string
+        magneticLink: string,
+        userCertificate: string
         ) {
-        this.hashChain = new HashChain(paymentSize);
+        const hashChainSize = paymentSize / (1024 * 16)
+        this.hashChain = new HashChain(hashChainSize);
         this.commitment = new Commitment(
-            torrentId, 
-            receiverPublicKey, 
+            magneticLink, 
+            receiverCertificate, 
             this.hashChain.getHashRoot(), 
-            userPrivateKey)
+            userPrivateKey,
+            userCertificate)
     }
 
-    public payHash() {
-        return this.hashChain.payHash();
+    public retryLastPayment = (): [string, number] => {
+        const hashLinkIndex = this.hashChain.hashes.length - this.hashChain.hashToPay - 1;
+        const hashLink = this.hashChain.hashes[this.hashChain.hashToPay + 1];
+        return [hashLink, hashLinkIndex];
     }
 
-    public isSeekingInstance(receiverPublicKey: string, torrentId: string){
-        return (
-            this.commitment.getReceiver() === receiverPublicKey && 
-            this.commitment.getTorrent() === torrentId);
+    public payHash = (): [string, number] => {
+        const hashLinkIndex = this.hashChain.hashToPay;
+        const hashLink = this.hashChain.payHash()
+        return [hashLink, hashLinkIndex];
     }
 
 }
