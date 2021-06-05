@@ -2,7 +2,6 @@ import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
 import { TORRENTE_NOTIFICATION_PORT } from '../config';
-import { tryNatTraversal } from './NatTraversalHandler';
 import { MessagesHandler } from './messages/MessagesHandler';
 import { NotificationHandler } from './notification/NotificationHandler';
 
@@ -24,7 +23,7 @@ export class ConnectionController {
         return new Promise((resolve, reject) => {
             try{
                 server.listen(TORRENTE_NOTIFICATION_PORT, () => {
-                    console.log(`Notification port open on: ${TORRENTE_NOTIFICATION_PORT}`);
+                    console.log(`[INFO] Notification port open on: ${TORRENTE_NOTIFICATION_PORT}`);
                 });
                 wss.on('connection', (ws: WebSocket) => {
                     this.handleConnection(ws);
@@ -47,17 +46,13 @@ export class ConnectionController {
     handleConnection(ws: WebSocket) {
         this.torrenteConnection = ws;
         this.notificationHandler = new NotificationHandler(ws);
-        this.messagesHandler = new MessagesHandler(ws);
-        console.log("connected to Torrente");
+        this.messagesHandler = new MessagesHandler(ws, this.notificationHandler);
+        console.log("[INFO] connected to Torrente");
         this.notificationHandler.notifyConnection();
-        tryNatTraversal().catch((err) => {
-            console.log("[ERROR]: ", err.message) 
-            this.notificationHandler.notifyNATIssue();
-        });
     }
 
     handleDisconnection() {
-        console.log("disconnected from Torrente");
+        console.log("[INFO] disconnected from Torrente");
     }
 
 }

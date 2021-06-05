@@ -1,4 +1,8 @@
-import elliptic from 'elliptic';
+import crypto from 'crypto';
+import sha256 from 'crypto-js/sha256';
+
+const ALGORITHM = "sha384";
+const SIGNATURE_FORMAT = "hex"
 
 export type CommitmentMessage = {
     content: CommitmentContent,
@@ -6,9 +10,9 @@ export type CommitmentMessage = {
 }
 
 export type CommitmentContent = {
-    torrentId: string
-    payerPublicKey: string,
-    receiverPublicKey: string,
+    magneticLink: string
+    payerFingerprint: string,
+    receiverFingerprint: string,
     hashRoot: string
 }
 
@@ -16,57 +20,51 @@ export class Commitment {
     commitmentMessage: CommitmentMessage;
 
     public constructor(
-        torrentId: string, 
-        receiverPublicKey: string,
+        magneticLink: string, 
+        receiverCertificate: string,
         hashRoot: string, 
         userPrivateKey: string,
+        userCertificate: string
     ){
-        const EC = elliptic.ec;
-        const ecdsaCurve = elliptic.curves['p256'];
-        const ecdsa = new EC(ecdsaCurve);
-
-        const signKey = ecdsa.keyFromPrivate(userPrivateKey, 'hex');
-        const derivKey = signKey.getPublic().encode('hex', false);
+        const sign = crypto.createSign(ALGORITHM);
 
         // now we have the signature, next we should send the signed transaction proposal to the peer
 
         const commitmentContent = {
-            torrentId: torrentId,
-            payerPublicKey: derivKey.toString(),
-            receiverPublicKey: receiverPublicKey,
+            magneticLink: magneticLink,
+            payerFingerprint: sha256(userCertificate).toString(),
+            receiverFingerprint: sha256(receiverCertificate).toString(),
             hashRoot: hashRoot
         };
         const bufferCommitment = Buffer.from(JSON.stringify(commitmentContent));
-        const contentSignature = Buffer.from(ecdsa.sign(bufferCommitment, signKey).toDER());
+        sign.update(bufferCommitment);
+        const contentSignature = sign.sign(userPrivateKey, SIGNATURE_FORMAT);
         this.commitmentMessage = {
             content: commitmentContent,
-            signature: contentSignature.toString('base64'),
+            signature: contentSignature,
         };
     }
 
     public getReceiver() {
-        return this.commitmentMessage.content.receiverPublicKey;
+        return this.commitmentMessage.content.receiverFingerprint;
     }
 
     public getTorrent() {
-        return this.commitmentMessage.content.torrentId;
+        return this.commitmentMessage.content.magneticLink;
     }
 
     public getPayer() {
-        return this.commitmentMessage.content.payerPublicKey;
+        return this.commitmentMessage.content.payerFingerprint;
     }
 
-    public static validateSignature(commitmentToValidate: CommitmentMessage): boolean{
-        const payerPublicKeyString = commitmentToValidate.content.payerPublicKey;
+    public static validateSignature(commitmentToValidate: CommitmentMessage, certificate: string): boolean{
+        const verify = crypto.createVerify(ALGORITHM);
+        const bufferCommitment = Buffer.from(JSON.stringify(commitmentToValidate.content));
+        
+        verify.update(bufferCommitment)
+        
+        const verification = verify.verify(certificate, commitmentToValidate.signature, SIGNATURE_FORMAT);
 
-        const EC = elliptic.ec;
-        const ecdsaCurve = elliptic.curves['p256'];
-        const ecdsa = new EC(ecdsaCurve);
-
-        const signatureBytes = Buffer.from(commitmentToValidate.signature, 'base64');
-        const messageBytes = Buffer.from(JSON.stringify(commitmentToValidate.content));
-        const payerPublicKey = ecdsa.keyFromPublic(payerPublicKeyString, 'hex');
-
-        return payerPublicKey.verify(messageBytes, signatureBytes);
+        return verification;
     }
 }

@@ -29,10 +29,10 @@ export class NotificationHandler {
         this.torrenteConnection.send(jsonNotification);
     }
 
-    notifyPayment(ip: string, torrentId: string){
+    notifyPayment(ip: string, magneticLink: string){
         const notificationObject = new PaymentNotification({
-            UserIp: ip,
-            torrentId: torrentId
+            payerIp: ip,
+            magneticLink: magneticLink
         });
 
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());           

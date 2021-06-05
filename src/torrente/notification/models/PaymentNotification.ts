@@ -1,8 +1,8 @@
 import { INotificationModel, NotificationTypesEnum } from "./NotificationModel";
 
 export interface IPaymentNotifyData {
-    torrentId: string;
-    UserIp: string;
+    magneticLink: string;
+    payerIp: string;
 }
 
 export class PaymentNotification implements INotificationModel <IPaymentNotifyData>{
@@ -25,9 +25,9 @@ export class PaymentNotification implements INotificationModel <IPaymentNotifyDa
         };
     }
 
-    setPaymentData(torrentId?: string,  UserIp?: string) { 
-        torrentId && (this.data.torrentId = torrentId);
-        UserIp && (this.data.UserIp = UserIp);
+    setPaymentData(magneticLink?: string,  payerIp?: string) { 
+        magneticLink && (this.data.magneticLink = magneticLink);
+        payerIp && (this.data.payerIp = payerIp);
     }
 
 }

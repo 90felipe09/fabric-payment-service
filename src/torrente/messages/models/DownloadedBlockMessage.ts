@@ -3,7 +3,7 @@ import { IMessagesModel, MessagesTypesEnum } from "./MessageModel";
 export interface IDownloadedBlockMessageData {
     fileSize: number;
     uploaderIp: string;
-    torrentId: string;
+    magneticLink: string;
 }
 
 export class DownloadedBlockMessage implements IMessagesModel <IDownloadedBlockMessageData>{

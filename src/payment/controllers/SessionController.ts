@@ -1,53 +1,93 @@
+import axios from "axios";
+import { PAYFLUXO_LISTENING_PORT } from "../../config";
+import { Commitment, CommitmentContent, CommitmentMessage } from "../models/Commitment";
+import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
+import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
+import { MicropaymentRequest } from "../models/MicropaymentRequest";
+import { CommitmentNotFoundResponse, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
+import { getPeerHash } from "../utils/peerHash";
 import { PaymentHandler } from "./PaymentHandler";
 import { ReceiverHandler } from "./ReceiverHandler";
 
 export class SessionController {
     loadedUserKey: string;
-    receivingListeners: ReceiverHandler[];
-    payingControllers: PaymentHandler[];
+    loadedUserCertificate: string;
+    loadedUserMSP: string;
+    receivingListeners: ReceiverHashMap;
+    paymentHandlers: PaymentHashMap;
 
-    public constructor (userPrivateKey: string){
+    public constructor (userPrivateKey: string, userCertificate: string, userMSP: string){
         this.loadedUserKey = userPrivateKey;
+        this.loadedUserCertificate = userCertificate;
+        this.loadedUserMSP = userMSP;
+        this.receivingListeners = {};
+        this.paymentHandlers = {};
     }
 
-    public handleReceive(){
+    public handleReceive(micropaymentRequest: MicropaymentRequest, requesterIp: string){
+        const payerHash = getPeerHash(requesterIp, micropaymentRequest.magneticLink);
+
+        const receiverListener = this.receivingListeners[payerHash];
+        if (receiverListener){
+            if (receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
+                return SuccesfulPaymentResponse;
+            }
+            return WrongPaymentResponse;
+        }
+        return CommitmentNotFoundResponse;
+    }
+
+    public async handleCommit(commitmentMessage: CommitmentMessage, requesterIp: string){
         // TODO
-        return;
+        // const peerEndpoint = `${requesterIp}:${PAYFLUXO_EXTERNAL_PORT}/certificate` // prod
+        const peerEndpoint = `http://${requesterIp}:${PAYFLUXO_LISTENING_PORT}/certificate` // teste
+        const keyResponse = await axios.get(peerEndpoint)
+        const certificate = keyResponse.data['certificate']
+
+        const commitmentIsValid = Commitment.validateSignature(commitmentMessage, certificate)
+        // get key from peer
+
+        if (commitmentIsValid){
+            this.addReceivingListener(
+                requesterIp,
+                certificate,
+                commitmentMessage.content
+            )
+            return SuccesfulCommitResponse;
+        }
+        else{
+            return WrongCommitmentResponse;
+        }
     }
 
-    public handleCommit(){
-        // TODO
-        return;
-    }
-
-    public payUploader(uploaderPublicKey: string, torrentId: string){
-        const uploaderToPay = this.payingControllers.find(paymentController => {
-            return paymentController.isSeekingInstance(uploaderPublicKey, torrentId);
-        })
-
-        uploaderToPay && uploaderToPay.payHash();
-    }
-
-    public addReceivingListener(ip: string, payerPublicKey: string){
+    public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentContent){
         const newReceiverListener = new ReceiverHandler(
-            ip, 
-            payerPublicKey);
-        this.receivingListeners.push(newReceiverListener);
+            payerIp, 
+            payerPublicKey,
+            commitment
+            );
+        const magneticLink = commitment.magneticLink
+        const receiverHash = getPeerHash(payerIp, magneticLink);
+
+        this.receivingListeners[receiverHash] = newReceiverListener;
     }
 
-    public addPayingControllers(
-        ip: string, 
+    public addpaymentHandlers(
+        receiverIp: string, 
         receiverPublicKey: string, 
         numberOfBlocks: number,
-        torrentId: string
+        magneticLink: string
         ){
         const newPaymentController = new PaymentHandler(
-            ip,
+            receiverIp,
             receiverPublicKey, 
             numberOfBlocks, 
             this.loadedUserKey,
-            torrentId)
+            magneticLink,
+            this.loadedUserCertificate)
 
-        this.payingControllers.push(newPaymentController);
+        const receiverHash = getPeerHash(receiverIp, magneticLink);
+
+        this.paymentHandlers[receiverHash] = newPaymentController;
     }
 }
