@@ -3,7 +3,7 @@ import { IMessagesModel, MessagesTypesEnum } from "./MessageModel";
 export interface IAuthenticatedMessageData {
     certificate: string;
     privateKey: string;
-    orgMSP: string;
+    mspId: string;
 }
 
 export class AuthenticatedMessage implements IMessagesModel <IAuthenticatedMessageData>{
