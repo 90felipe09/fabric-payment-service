@@ -31,8 +31,11 @@ export class MessagesHandler{
             case MessagesTypesEnum.Authenticated:
                 this.handleAuthentication(messageObject['data'])
                 break;
+            case MessagesTypesEnum.Logout:
+                this.handleLogout();
+                break;
             case MessagesTypesEnum.Closing:
-                this.handleClosing()
+                this.handleClosing();
                 break;
             default:
                 break;
@@ -76,7 +79,17 @@ export class MessagesHandler{
     }
 
     private handleClosing = () => {
+        if (this.sessionController){
+                SessionSaver.saveSession(this.sessionController);
+                this.sessionController.closeServer();
+        }
+        
+        process.exit();
+    }
+
+    private handleLogout = () => {
         SessionSaver.saveSession(this.sessionController);
         this.sessionController.closeServer();
+        this.sessionController = undefined;
     }
 }
