@@ -58,10 +58,10 @@ export class SessionSaver{
 
         const cypheredData = AES.encrypt(contentToCypher, keyToEncrypt).toString();
 
-        fs.writeFile(sessionToSave, cypheredData, 'utf8', function (err) {
-            if (err) {
-              return console.log(err);
-            }
-          });
+        fs.writeFileSync(sessionToSave, cypheredData,
+            {
+                encoding: "utf8",
+                flag: "w"
+            });
     }
 }
