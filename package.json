@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "description": "payment service for the biobank",
   "main": "index.js",
+  "bin": "dist/app.js",
+  "pkg": {
+    "assets": [ "node_modules/**/*", "dist/**/*"],
+    "targets": [ "node14-linux-x64", "node14-win-x64"]
+  },
   "scripts": {
     "start": "tsc && node dist/app.js",
     "start:dev": "nodemon src/app.ts",
-    "test": "jest"
+    "test": "jest",
+    "build-exe": "tsc && pkg . --out-path ./pkg/"
   },
   "repository": {
     "type": "git",
