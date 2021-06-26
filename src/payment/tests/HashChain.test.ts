@@ -2,7 +2,8 @@ import { HashChain } from "../models/HashChain";
 import sha256 from 'crypto-js/sha256';
 
 describe("test HashChain class", () => {
-    const newHashChain = new HashChain(7);
+    const newHashChain = new HashChain();
+    newHashChain.initHashChain(7);
 
     it("should have a hash chain of size 8 when specyfing 7.", () => {
         expect(newHashChain.hashes.length).toBe(8);
