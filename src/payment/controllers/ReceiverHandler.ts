@@ -1,13 +1,14 @@
 import sha256 from 'crypto-js/sha256';
 import { CommitmentContent } from "../models/Commitment";
 
-
 export class ReceiverHandler {
     loadedPayerPublicKey: string;
     payerIp: string;
     commitment: CommitmentContent;
     lastHash: string;
-    lastHashIndex: number
+    lastHashIndex: number;
+    lastHashRedeemed: string;
+    lastHashRedeemedIndex: number;
 
     public constructor(
         payerIp: string, 
@@ -20,6 +21,17 @@ export class ReceiverHandler {
         this.lastHash = commitment.hashRoot;
         this.lastHashIndex = 0;
     }
+
+    public loadState = (
+        lastHashReceived: string, 
+        lastHashReceivedIndex: number, 
+        lastHashRedeemed: string, 
+        lastHashRedeemedIndex: number) => {
+            this.lastHash = lastHashReceived;
+            this.lastHashIndex = lastHashReceivedIndex,
+            this.lastHashRedeemed = lastHashRedeemed,
+            this.lastHashRedeemedIndex = lastHashRedeemedIndex
+        }
 
     public verifyPayment (hashLink: string, hashLinkIndex: number) {
         var newHash = hashLink;

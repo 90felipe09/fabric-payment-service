@@ -1,8 +1,10 @@
 import axios from 'axios';
 import WebSocket from "ws";
-import { PAYFLUXO_LISTENING_PORT } from "../../config";
+import { PAYFLUXO_USING_PORT } from "../../config";
 import { startPayfluxoServer } from "../../payment/connections/PayfluxoServer";
 import { SessionController } from "../../payment/controllers/SessionController";
+import { SessionLoader } from '../../payment/data/SessionLoader';
+import { SessionSaver } from '../../payment/data/SessionSaver';
 import { MicropaymentRequest } from "../../payment/models/MicropaymentRequest";
 import { tryNatTraversal } from "../NatTraversalHandler";
 import { NotificationHandler } from "../notification/NotificationHandler";
@@ -29,14 +31,16 @@ export class MessagesHandler{
             case MessagesTypesEnum.Authenticated:
                 this.handleAuthentication(messageObject['data'])
                 break;
+            case MessagesTypesEnum.Closing:
+                this.handleClosing()
+                break;
             default:
                 break;
         }
     }
 
     private handleDownloadedBlock = async (data: IDownloadedBlockMessageData) => {
-        // const peerEndpoint = `http://${data.uploaderIp}:${PAYFLUXO_EXTERNAL_PORT}`; // prod
-        const peerEndpoint = `http://${data.uploaderIp}:${PAYFLUXO_LISTENING_PORT}`; // teste
+        const peerEndpoint = `http://${data.uploaderIp}:${PAYFLUXO_USING_PORT}`;
         const uploaderHash = `${data.magneticLink}@${data.uploaderIp}`
         var uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
         if(!uploaderToPay){
@@ -53,17 +57,26 @@ export class MessagesHandler{
             magneticLink: data.magneticLink
         }
 
-        const paymentResponse = await axios.post(`${peerEndpoint}/pay`, paymentMessage);
-
-        console.log(`[INFO] Paid ip ${data.uploaderIp} for a block from torrent ${data.magneticLink}`)
+        try{
+            const paymentResponse = await axios.post(`${peerEndpoint}/pay`, paymentMessage);
+            console.log(`[INFO] Paid ip ${data.uploaderIp} for a block from torrent ${data.magneticLink}`)
+        } catch (e){
+            console.log(`[ERROR] Payment not accepted ${e}`)
+        }
     }
 
     private handleAuthentication = (data: IAuthenticatedMessageData) => {
-        this.sessionController = startPayfluxoServer(data.privateKey, data.certificate, data.orgMSP, this.notificationHandler);
+        this.sessionController = startPayfluxoServer(data.privateKey, data.certificate, data.mspId, this.notificationHandler);
         tryNatTraversal().catch((err) => {
             console.log("[ERROR]: ", err.message) 
             this.notificationHandler.notifyNATIssue();
         });
-        // load persistence
+
+        SessionLoader.LoadSession(this.sessionController)
+    }
+
+    private handleClosing = () => {
+        SessionSaver.saveSession(this.sessionController);
+        this.sessionController.closeServer();
     }
 }

@@ -1,6 +1,7 @@
 export enum MessagesTypesEnum {
     DownloadedBlock = "DownloadedBlock",
-    Authenticated = "Authenticated"
+    Authenticated = "Authenticated",
+    Closing = "Closing"
 }
 
 export interface IMessagesModel<T> {

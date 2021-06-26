@@ -10,7 +10,7 @@ import { MicropaymentRequest } from '../models/MicropaymentRequest';
 export const startPayfluxoServer = (privateKey: string, certificate: string, msp: string, notificationHandler: NotificationHandler): SessionController => {
     const app = express();
     const server = http.createServer(app);
-    const sessionController = new SessionController(privateKey, certificate, msp);
+    const sessionController = new SessionController(privateKey, certificate, msp, server);
     const jsonParser = bodyParser.json();
 
     app.use(jsonParser);

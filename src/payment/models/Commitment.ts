@@ -19,16 +19,18 @@ export type CommitmentContent = {
 export class Commitment {
     commitmentMessage: CommitmentMessage;
 
-    public constructor(
+    public loadCommitment = (commitmentMessage: CommitmentMessage) => {
+        this.commitmentMessage = commitmentMessage;
+    }
+
+    public initCommitment = (
         magneticLink: string, 
         receiverCertificate: string,
         hashRoot: string, 
         userPrivateKey: string,
         userCertificate: string
-    ){
+    ) => {
         const sign = crypto.createSign(ALGORITHM);
-
-        // now we have the signature, next we should send the signed transaction proposal to the peer
 
         const commitmentContent = {
             magneticLink: magneticLink,
