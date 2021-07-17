@@ -1,7 +1,8 @@
 export enum NotificationTypesEnum {
     PaymentNotification = "PaymentNotification",
     ConnectionNotification = "ConnectionNotification",
-    NATNotifcation = "NATNotifcation"
+    NATNotifcation = "NATNotifcation",
+    IntentionDeclaredNotification = "IntentionDeclaredNotification"
 }
 
 export interface INotificationModel<T> {

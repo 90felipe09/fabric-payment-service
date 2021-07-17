@@ -10,6 +10,7 @@ import { tryNatTraversal } from "../NatTraversalHandler";
 import { NotificationHandler } from "../notification/NotificationHandler";
 import { IAuthenticatedMessageData } from "./models/AuthenticatedMessage";
 import { IDownloadedBlockMessageData } from "./models/DownloadedBlockMessage";
+import { IDownloadIntentionMessageData } from './models/DownloadIntentionMessage';
 import { MessagesTypesEnum } from "./models/MessageModel";
 
 export class MessagesHandler{
@@ -37,9 +38,17 @@ export class MessagesHandler{
             case MessagesTypesEnum.Closing:
                 this.handleClosing();
                 break;
+            case MessagesTypesEnum.DownloadIntention:
+                this.handleDownloadIntention(messageObject['data']);
+                break;
             default:
                 break;
         }
+    }
+
+    private handleDownloadIntention = async (data: IDownloadIntentionMessageData) => {
+        console.log({data});
+        this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId);
     }
 
     private handleDownloadedBlock = async (data: IDownloadedBlockMessageData) => {
