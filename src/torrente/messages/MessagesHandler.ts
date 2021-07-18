@@ -6,6 +6,7 @@ import { SessionController } from "../../payment/controllers/SessionController";
 import { SessionLoader } from '../../payment/data/SessionLoader';
 import { SessionSaver } from '../../payment/data/SessionSaver';
 import { MicropaymentRequest } from "../../payment/models/MicropaymentRequest";
+import { TorrenteWallet } from '../../payment/models/TorrenteWallet';
 import { tryNatTraversal } from "../NatTraversalHandler";
 import { NotificationHandler } from "../notification/NotificationHandler";
 import { IAuthenticatedMessageData } from "./models/AuthenticatedMessage";
@@ -41,13 +42,38 @@ export class MessagesHandler{
             case MessagesTypesEnum.DownloadIntention:
                 this.handleDownloadIntention(messageObject['data']);
                 break;
+            case MessagesTypesEnum.RedeemValues:
+                this.handleRedeemValues();
+                break;
+            case MessagesTypesEnum.RefreshWallet:
+                this.handleRefreshWallet();
+                break;
             default:
                 break;
         }
     }
 
+    private handleRedeemValues = async () => {
+        // TODO: Invoke redeem smart contract
+        console.log("[DEBUG] Redeem values requested");
+
+        this.handleRefreshWallet();
+    }
+
+    private handleRefreshWallet = async () => {
+        console.log("[DEBUG] Wallet refresh notified");
+        // MOCK
+        const mockedWallet: TorrenteWallet = {
+            available: Math.random() * 5,
+            frozen: Math.random() * 5,
+            redeemable: Math.random()  * 5
+        }
+        // END MOCK
+
+        this.notificationHandler.notifyWalletRefresh(mockedWallet);
+    }
+
     private handleDownloadIntention = async (data: IDownloadIntentionMessageData) => {
-        console.log({data});
         this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId);
     }
 

@@ -1,9 +1,11 @@
 import WebSocket from "ws";
 import { PAYFLUXO_LISTENING_PORT, PAYFLUXO_EXTERNAL_PORT } from "../../config";
+import { TorrenteWallet } from "../../payment/models/TorrenteWallet";
 import { ConnectionNotification } from "./models/ConnectionNotification";
 import { IntentionDeclaredNotification } from "./models/IntentionDeclaredNotification";
 import { NATNotification } from "./models/NATNotification";
 import { PaymentNotification } from "./models/PaymentNotification";
+import { WalletRefreshNotification } from "./models/WalletNotification";
 
 enum DownloadDeclarationIntentionStatusEnum {
     SUCCESS = 0,
@@ -54,6 +56,13 @@ export class NotificationHandler {
         });
 
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());           
+        this.torrenteConnection.send(jsonNotification);
+    }
+
+    notifyWalletRefresh(newWallet: TorrenteWallet){
+        const walletObject = new WalletRefreshNotification({wallet: newWallet});
+
+        const jsonNotification = JSON.stringify(walletObject.getNotificationObject());           
         this.torrenteConnection.send(jsonNotification);
     }
 }

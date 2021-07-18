@@ -3,7 +3,9 @@ export enum MessagesTypesEnum {
     Authenticated = "Authenticated",
     Closing = "Closing",
     Logout = "Logout",
-    DownloadIntention = "DownloadIntention"
+    DownloadIntention = "DownloadIntention",
+    RedeemValues = "RedeemValues",
+    RefreshWallet = "RefreshWallet"
 }
 
 export interface IMessagesModel<T> {
