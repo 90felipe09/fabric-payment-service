@@ -13,11 +13,15 @@ import { IAuthenticatedMessageData } from "./models/AuthenticatedMessage";
 import { IDownloadedBlockMessageData } from "./models/DownloadedBlockMessage";
 import { IDownloadIntentionMessageData } from './models/DownloadIntentionMessage';
 import { MessagesTypesEnum } from "./models/MessageModel";
+import { HYPERLEDGER_IP, HYPERLEDGER_PORT } from '../../hyperledger/config';
+import { Invoke } from '../../hyperledger/connections/Invoke';
+import { ISmartContractMessageData } from './models/SmartContractMessage';
 
 export class MessagesHandler{
     torrenteConnection: WebSocket;
     sessionController: SessionController;
     notificationHandler: NotificationHandler;
+    invokeInstance: Invoke;
 
     constructor(ws: WebSocket, notificationHandler: NotificationHandler){
         this.torrenteConnection = ws;
@@ -127,4 +131,16 @@ export class MessagesHandler{
         this.sessionController.closeServer();
         this.sessionController = undefined;
     }
+
+    
+    private handleSmartContract = async (data: ISmartContractMessageData) => {
+        
+
+        let message = await this.invokeInstance.invokeTransaction(data.Chaincode, data.Args);
+        
+
+        console.log(`[INFO] Invoked Smart Contract ${data.Chaincode} `)
+    }
+
+
 }
