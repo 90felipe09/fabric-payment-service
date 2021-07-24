@@ -1,3 +1,4 @@
+import { DownloadDeclarationIntentionsMap } from "../controllers/SessionController"
 import { CommitmentContent, CommitmentMessage } from "../models/Commitment"
 
 export type ReceiverHandlerData = {
@@ -21,5 +22,6 @@ export type PayerHandlerData = {
 
 export type SessionData = {
     receiverHandlers: ReceiverHandlerData[],
-    payerHandlers: PayerHandlerData[]
+    payerHandlers: PayerHandlerData[],
+    downloadDeclarations: DownloadDeclarationIntentionsMap
 }

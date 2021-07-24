@@ -7,7 +7,7 @@ import { NATNotification } from "./models/NATNotification";
 import { PaymentNotification } from "./models/PaymentNotification";
 import { WalletRefreshNotification } from "./models/WalletNotification";
 
-enum DownloadDeclarationIntentionStatusEnum {
+export enum DownloadDeclarationIntentionStatusEnum {
     SUCCESS = 0,
     NO_FUNDS = 1
 }
@@ -19,9 +19,9 @@ export class NotificationHandler {
         this.torrenteConnection = ws;
     }
 
-    notifyDownloadDeclarationIntentionStatus(torrentId: string) {
+    notifyDownloadDeclarationIntentionStatus(torrentId: string, status: DownloadDeclarationIntentionStatusEnum) {
         const notificationObject = new IntentionDeclaredNotification({
-            status: DownloadDeclarationIntentionStatusEnum.SUCCESS,
+            status: status,
             torrentId: torrentId
         })
 

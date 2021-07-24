@@ -3,7 +3,6 @@ import http from 'http';
 import WebSocket from 'ws';
 import { payfluxoLogo } from './payfluxoLogo';
 import { ConnectionController } from './torrente/ConnectionController';
-import { Invoke } from './hyperledger/connections/Invoke';
 
 const app = express();
 const server = http.createServer(app);

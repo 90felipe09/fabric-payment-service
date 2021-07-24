@@ -1,6 +1,8 @@
 import axios from "axios";
 import http from 'http';
 import { PAYFLUXO_USING_PORT } from "../../config";
+import { PaymentIntentionContract } from "../../hyperledger/smart-contracts/PaymentIntentionContract";
+import { RedeemContract } from "../../hyperledger/smart-contracts/RedeemContract";
 import { Commitment, CommitmentContent, CommitmentMessage } from "../models/Commitment";
 import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
@@ -9,7 +11,11 @@ import { CommitmentNotFoundResponse, SuccesfulPaymentResponse, WrongPaymentRespo
 import { getPeerHash } from "../utils/peerHash";
 import { PaymentHandler } from "./PaymentHandler";
 import { ReceiverHandler } from "./ReceiverHandler";
+import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage"
 
+export type DownloadDeclarationIntentionsMap = {
+    [magneticLink: string]: string,
+}
 export class SessionController {
     loadedUserKey: string;
     loadedUserCertificate: string;
@@ -19,6 +25,11 @@ export class SessionController {
 
     payfluxoServer: http.Server;
 
+    downloadDeclarationIntentions: DownloadDeclarationIntentionsMap;
+
+    redeemContract: RedeemContract;
+    paymentIntentionContract: PaymentIntentionContract;
+
     public constructor (userPrivateKey: string, userCertificate: string, userMSP: string, payfluxoServer: http.Server){
         this.loadedUserKey = userPrivateKey;
         this.loadedUserCertificate = userCertificate;
@@ -27,6 +38,15 @@ export class SessionController {
         this.paymentHandlers = {};
 
         this.payfluxoServer = payfluxoServer;
+
+        const authData: IAuthenticatedMessageData = {
+            certificate: this.loadedUserCertificate,
+            mspId: this.loadedUserMSP,
+            privateKey: this.loadedUserKey
+        }
+
+        this.redeemContract = new RedeemContract(authData);
+        this.paymentIntentionContract = new PaymentIntentionContract(authData);
     }
 
     public closeServer = () => {
@@ -59,7 +79,9 @@ export class SessionController {
 
         const commitmentIsValid = Commitment.validateSignature(commitmentMessage, certificate)
         
-        if (commitmentIsValid){
+        const isIntentionValid = this.isIntentionValid(commitmentMessage.content.downloadIntentionId)
+
+        if (commitmentIsValid && isIntentionValid){
             this.addReceivingListener(
                 requesterIp,
                 certificate,
@@ -114,7 +136,8 @@ export class SessionController {
         receiverIp: string, 
         receiverPublicKey: string, 
         numberOfBlocks: number,
-        magneticLink: string
+        magneticLink: string,
+        downloadIntentionId: string
         ){
         const newPaymentController = new PaymentHandler()
     
@@ -124,7 +147,8 @@ export class SessionController {
             numberOfBlocks,
             this.loadedUserKey,
             magneticLink,
-            this.loadedUserCertificate)
+            this.loadedUserCertificate,
+            downloadIntentionId)
 
         const receiverHash = getPeerHash(receiverIp, magneticLink);
 
@@ -146,5 +170,20 @@ export class SessionController {
         const receiverHash = getPeerHash(receiverIp, magneticLink);
 
         this.paymentHandlers[receiverHash] = newPaymentController;
+    }
+
+    public recoverDownloadIntentions(
+        downloadIntentions: DownloadDeclarationIntentionsMap
+    ) {
+        this.downloadDeclarationIntentions = downloadIntentions;
+    }
+
+    public isIntentionValid = async (intentionId: string) => {
+        if (intentionId) {
+            const declarationReference = await this.paymentIntentionContract.invokeReadPaymentIntention(intentionId);
+            const isNotExpired = new Date(Date.parse(declarationReference.expiration_date)) > new Date();
+            return isNotExpired;
+        }
+        return false;
     }
 }

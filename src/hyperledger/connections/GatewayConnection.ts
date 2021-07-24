@@ -60,7 +60,7 @@ export class GatewayConnection {
                 certificate: credentials.certificate,
                 privateKey: credentials.privateKey,
             },
-            mspId: credentials.orgMSP,
+            mspId: credentials.mspId,
             type: "X.509"
         }
     

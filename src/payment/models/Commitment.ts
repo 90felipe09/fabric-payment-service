@@ -13,7 +13,8 @@ export type CommitmentContent = {
     magneticLink: string
     payerFingerprint: string,
     receiverFingerprint: string,
-    hashRoot: string
+    hashRoot: string,
+    downloadIntentionId: string
 }
 
 export class Commitment {
@@ -28,7 +29,8 @@ export class Commitment {
         receiverCertificate: string,
         hashRoot: string, 
         userPrivateKey: string,
-        userCertificate: string
+        userCertificate: string,
+        downloadIntentionId: string
     ) => {
         const sign = crypto.createSign(ALGORITHM);
 
@@ -36,7 +38,8 @@ export class Commitment {
             magneticLink: magneticLink,
             payerFingerprint: sha256(userCertificate).toString(),
             receiverFingerprint: sha256(receiverCertificate).toString(),
-            hashRoot: hashRoot
+            hashRoot: hashRoot,
+            downloadIntentionId: downloadIntentionId
         };
         const bufferCommitment = Buffer.from(JSON.stringify(commitmentContent));
         sign.update(bufferCommitment);

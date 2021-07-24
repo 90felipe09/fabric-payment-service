@@ -41,7 +41,8 @@ export class SessionSaver{
 
         return {
             payerHandlers: paymentHandlers,
-            receiverHandlers: receiverHandlers
+            receiverHandlers: receiverHandlers,
+            downloadDeclarations: session.downloadDeclarationIntentions
         }
     }
 
