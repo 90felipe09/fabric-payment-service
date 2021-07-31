@@ -1,17 +1,20 @@
 import axios from "axios";
+import sha256 from 'crypto-js/sha256';
 import http from 'http';
 import { PAYFLUXO_USING_PORT } from "../../config";
-import { PaymentIntentionContract } from "../../hyperledger/smart-contracts/PaymentIntentionContract";
+import { AccountContract } from "../../hyperledger/smart-contracts/AccountContract";
+import { PaymentIntentionContract, PaymentIntentionResponse } from "../../hyperledger/smart-contracts/PaymentIntentionContract";
 import { RedeemContract } from "../../hyperledger/smart-contracts/RedeemContract";
-import { Commitment, CommitmentContent, CommitmentMessage } from "../models/Commitment";
+import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
+import { Commitment, CommitmentMessage } from "../models/Commitment";
 import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
 import { MicropaymentRequest } from "../models/MicropaymentRequest";
 import { CommitmentNotFoundResponse, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
+import { TorrenteWallet } from "../models/TorrenteWallet";
 import { getPeerHash } from "../utils/peerHash";
 import { PaymentHandler } from "./PaymentHandler";
 import { ReceiverHandler } from "./ReceiverHandler";
-import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage"
 
 export type DownloadDeclarationIntentionsMap = {
     [magneticLink: string]: string,
@@ -29,6 +32,7 @@ export class SessionController {
 
     redeemContract: RedeemContract;
     paymentIntentionContract: PaymentIntentionContract;
+    accountContract: AccountContract;
 
     public constructor (userPrivateKey: string, userCertificate: string, userMSP: string, payfluxoServer: http.Server){
         this.loadedUserKey = userPrivateKey;
@@ -47,6 +51,42 @@ export class SessionController {
 
         this.redeemContract = new RedeemContract(authData);
         this.paymentIntentionContract = new PaymentIntentionContract(authData);
+        this.accountContract = new AccountContract(authData);
+    }
+
+    public getWallet = async (): Promise<TorrenteWallet> => {
+        const accountId: string = sha256(this.loadedUserCertificate).toString();
+        const account = await this.accountContract.evaluateAccount(accountId);
+        const availableFunds: number = parseFloat(account.balance);
+        const reedemableValues: number = await this.getReedemableValues();
+        const frozenValues: number = await this.getFrozenValues();
+        return {
+            available: availableFunds,
+            frozen: frozenValues,
+            redeemable: reedemableValues
+        }
+    }
+
+    private getFrozenValues = async (): Promise<number> => {
+        const paymentIntentionsPromises: Promise<PaymentIntentionResponse>[] = Object.values(
+            this.downloadDeclarationIntentions).map(downloadIntentionId => {
+                return this.paymentIntentionContract.invokeReadPaymentIntention(downloadIntentionId);
+        })
+        const paymentIntentions = await Promise.all(paymentIntentionsPromises);
+        const frozenValues: number = paymentIntentions.reduce((acc, paymentIntention) => {
+            acc += paymentIntention.available_funds;
+            return acc;
+        }, 0);
+        return frozenValues;
+    }
+
+    private getReedemableValues = async (): Promise<number> => {
+        const reedemableHashesNumber: number = Object.values(this.receivingListeners).reduce((acc, receiverListener) => {
+            acc += (receiverListener.lastHashIndex - receiverListener.lastHashRedeemedIndex);
+            return acc;
+        }, 0);
+        const piecePrice = await this.paymentIntentionContract.queryGetPiecePrice();
+        return reedemableHashesNumber * piecePrice;
     }
 
     public closeServer = () => {
@@ -79,13 +119,13 @@ export class SessionController {
 
         const commitmentIsValid = Commitment.validateSignature(commitmentMessage, certificate)
         
-        const isIntentionValid = this.isIntentionValid(commitmentMessage.content.downloadIntentionId)
+        const isIntentionValid = this.isIntentionValid(commitmentMessage.data.payment_intention_id)
 
         if (commitmentIsValid && isIntentionValid){
             this.addReceivingListener(
                 requesterIp,
                 certificate,
-                commitmentMessage.content
+                commitmentMessage
             )
             return SuccesfulCommitResponse;
         }
@@ -94,13 +134,13 @@ export class SessionController {
         }
     }
 
-    public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentContent){
+    public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentMessage){
         const newReceiverListener = new ReceiverHandler(
             payerIp, 
             payerPublicKey,
             commitment
             );
-        const magneticLink = commitment.magneticLink
+        const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
 
         this.receivingListeners[receiverHash] = newReceiverListener;
@@ -109,7 +149,7 @@ export class SessionController {
     public recoverReceivingListener(
         payerIp: string,
         payerPublicKey: string,
-        commitment: CommitmentContent,
+        commitment: CommitmentMessage,
         lastHashReceived: string,
         lastHashReceivedIndex: number,
         lastHashRedeemed: string,
@@ -120,7 +160,7 @@ export class SessionController {
             payerPublicKey,
             commitment
             );
-        const magneticLink = commitment.magneticLink
+        const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
 
         newReceiverListener.loadState(
