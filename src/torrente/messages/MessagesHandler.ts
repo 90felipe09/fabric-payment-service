@@ -6,15 +6,14 @@ import { SessionController } from "../../payment/controllers/SessionController";
 import { SessionLoader } from '../../payment/data/SessionLoader';
 import { SessionSaver } from '../../payment/data/SessionSaver';
 import { MicropaymentRequest } from "../../payment/models/MicropaymentRequest";
-import { TorrenteWallet } from '../../payment/models/TorrenteWallet';
+import { DownloadDeclarationIntentionStatusEnum } from '../../torrente/notification/NotificationHandler';
 import { tryNatTraversal } from "../NatTraversalHandler";
 import { NotificationHandler } from "../notification/NotificationHandler";
 import { IAuthenticatedMessageData } from "./models/AuthenticatedMessage";
 import { IDownloadedBlockMessageData } from "./models/DownloadedBlockMessage";
 import { IDownloadIntentionMessageData } from './models/DownloadIntentionMessage';
 import { MessagesTypesEnum } from "./models/MessageModel";
-import { HYPERLEDGER_IP, HYPERLEDGER_PORT } from '../../hyperledger/config';
-import { DownloadDeclarationIntentionStatusEnum } from '../../torrente/notification/NotificationHandler'
+
 export class MessagesHandler {
     torrenteConnection: WebSocket;
     sessionController: SessionController;
@@ -55,7 +54,13 @@ export class MessagesHandler {
     }
 
     private handleRedeemValues = async () => {
-        // TODO: Invoke redeem smart contract
+        const redeemPromises = Object.values(this.sessionController.receivingListeners).map(receiverListener => {
+            this.sessionController.redeemContract.invokeRedeem(
+                receiverListener.commitment,
+                receiverListener.lastHash,
+                receiverListener.lastHashIndex);
+        });
+        await Promise.all(redeemPromises);
         console.log("[DEBUG] Redeem values requested");
 
         this.handleRefreshWallet();
@@ -63,15 +68,10 @@ export class MessagesHandler {
 
     private handleRefreshWallet = async () => {
         console.log("[DEBUG] Wallet refresh notified");
-        // MOCK
-        const mockedWallet: TorrenteWallet = {
-            available: Math.random() * 5,
-            frozen: Math.random() * 5,
-            redeemable: Math.random() * 5
-        }
-        // END MOCK
 
-        this.notificationHandler.notifyWalletRefresh(mockedWallet);
+        const accountWallet = await this.sessionController.getWallet();
+
+        this.notificationHandler.notifyWalletRefresh(accountWallet);
     }
 
     private handleDownloadIntention = async (data: IDownloadIntentionMessageData) => {
@@ -145,10 +145,10 @@ export class MessagesHandler {
     }
 
     private declareNewPaymentIntention = async (data: IDownloadIntentionMessageData ) => {
-        // Get piece price
+        const piecePrice = await this.sessionController.paymentIntentionContract.queryGetPiecePrice();
         const paymentIntention = await this.sessionController.paymentIntentionContract.invokeCreatePaymentIntention(
             data.magneticLink,
-            data.piecesNumber // Multiply this by the piece price retrieved
+            data.piecesNumber * piecePrice
         );
         if (paymentIntention.id) {
             this.sessionController.downloadDeclarationIntentions[data.magneticLink] = paymentIntention.id;
