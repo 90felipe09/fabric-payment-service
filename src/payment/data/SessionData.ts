@@ -2,7 +2,7 @@ import { DownloadDeclarationIntentionsMap } from "../controllers/SessionControll
 import { CommitmentContent, CommitmentMessage } from "../models/Commitment"
 
 export type ReceiverHandlerData = {
-    commitment: CommitmentContent,
+    commitment: CommitmentMessage,
     ip: string,
     publicCertificate: string,
     lastHashReceived: string,

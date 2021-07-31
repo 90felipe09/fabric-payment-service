@@ -19,7 +19,7 @@ export class SessionSaver{
                 ip: paymentHandler.receiverIp,
                 lastHashSent: lastHashSent,
                 lastHashSentIndex: lastHashSentIndex,
-                magneticLink: paymentHandler.commitment.commitmentMessage.content.magneticLink
+                magneticLink: paymentHandler.commitment.commitmentMessage.data.data_id
             }
 
             paymentHandlers.push(newPaymentHandler);
