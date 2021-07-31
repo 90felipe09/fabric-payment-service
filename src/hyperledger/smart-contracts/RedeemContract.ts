@@ -1,8 +1,8 @@
 import { Contract } from "fabric-network";
-import { CommitmentContent, CommitmentMessage } from "../../payment/models/Commitment";
+import { CommitmentMessage } from "../../payment/models/Commitment";
 import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
 import { REDEEM_CONTRACT } from "../config";
-import { SmartContract } from "./SmartContract"; 
+import { SmartContract } from "./SmartContract";
 
 export class RedeemContract extends SmartContract {
     chaincodeReference: Contract;
@@ -11,7 +11,8 @@ export class RedeemContract extends SmartContract {
         super(credentials, REDEEM_CONTRACT);
     }
 
-    public invokeRedeem = (commitment: CommitmentMessage, hashLink: string, hashLinkIndex: number) => {
-        this.invokeTransaction('redeem', [commitment, hashLink, hashLinkIndex]);
+    public invokeRedeem = async(commitment: CommitmentMessage, hashLink: string, hashLinkIndex: number): Promise<void> => {
+        const stringfiedCommitment: string = JSON.stringify(commitment);
+        this.invokeTransaction('redeem', [stringfiedCommitment, hashLink, hashLinkIndex]);
     }
 }
