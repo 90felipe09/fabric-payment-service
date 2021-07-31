@@ -6,7 +6,7 @@ import { SessionController } from "../../payment/controllers/SessionController";
 import { SessionLoader } from '../../payment/data/SessionLoader';
 import { SessionSaver } from '../../payment/data/SessionSaver';
 import { MicropaymentRequest } from "../../payment/models/MicropaymentRequest";
-import { TorrenteWallet } from '../../payment/models/TorrenteWallet';
+import { DownloadDeclarationIntentionStatusEnum } from '../../torrente/notification/NotificationHandler';
 import { tryNatTraversal } from "../NatTraversalHandler";
 import { NotificationHandler } from "../notification/NotificationHandler";
 import { IAuthenticatedMessageData } from "./models/AuthenticatedMessage";
@@ -14,12 +14,12 @@ import { IDownloadedBlockMessageData } from "./models/DownloadedBlockMessage";
 import { IDownloadIntentionMessageData } from './models/DownloadIntentionMessage';
 import { MessagesTypesEnum } from "./models/MessageModel";
 
-export class MessagesHandler{
+export class MessagesHandler {
     torrenteConnection: WebSocket;
     sessionController: SessionController;
     notificationHandler: NotificationHandler;
 
-    constructor(ws: WebSocket, notificationHandler: NotificationHandler){
+    constructor(ws: WebSocket, notificationHandler: NotificationHandler) {
         this.torrenteConnection = ws;
         this.notificationHandler = notificationHandler;
     }
@@ -54,7 +54,13 @@ export class MessagesHandler{
     }
 
     private handleRedeemValues = async () => {
-        // TODO: Invoke redeem smart contract
+        const redeemPromises = Object.values(this.sessionController.receivingListeners).map(receiverListener => {
+            this.sessionController.redeemContract.invokeRedeem(
+                receiverListener.commitment,
+                receiverListener.lastHash,
+                receiverListener.lastHashIndex);
+        });
+        await Promise.all(redeemPromises);
         console.log("[DEBUG] Redeem values requested");
 
         this.handleRefreshWallet();
@@ -62,29 +68,39 @@ export class MessagesHandler{
 
     private handleRefreshWallet = async () => {
         console.log("[DEBUG] Wallet refresh notified");
-        // MOCK
-        const mockedWallet: TorrenteWallet = {
-            available: Math.random() * 5,
-            frozen: Math.random() * 5,
-            redeemable: Math.random()  * 5
-        }
-        // END MOCK
 
-        this.notificationHandler.notifyWalletRefresh(mockedWallet);
+        const accountWallet = await this.sessionController.getWallet();
+
+        this.notificationHandler.notifyWalletRefresh(accountWallet);
     }
 
     private handleDownloadIntention = async (data: IDownloadIntentionMessageData) => {
-        this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId);
+        let declarationId = this.sessionController.downloadDeclarationIntentions[data.magneticLink];
+        const isValid = await this.sessionController.isIntentionValid(declarationId);
+        if (isValid) {
+            const paymentIntention = await this.declareNewPaymentIntention(data);
+            declarationId = paymentIntention.id;
+        }
+        if (!!declarationId) {
+            this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId,
+                DownloadDeclarationIntentionStatusEnum.SUCCESS);
+        } else {
+            this.notificationHandler.notifyDownloadDeclarationIntentionStatus(
+                data.torrentId,
+                DownloadDeclarationIntentionStatusEnum.NO_FUNDS
+            );
+        }
     }
 
     private handleDownloadedBlock = async (data: IDownloadedBlockMessageData) => {
         const peerEndpoint = `http://${data.uploaderIp}:${PAYFLUXO_USING_PORT}`;
         const uploaderHash = `${data.magneticLink}@${data.uploaderIp}`
         var uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
-        if(!uploaderToPay){
+        if (!uploaderToPay) {
             const certificateResponse = await axios.get(`${peerEndpoint}/certificate`);
             const uploaderCertificate = certificateResponse.data['certificate'];
-            this.sessionController.addpaymentHandlers(data.uploaderIp, uploaderCertificate, data.fileSize, data.magneticLink);
+            const declarationId = this.sessionController.downloadDeclarationIntentions[data.magneticLink];
+            this.sessionController.addpaymentHandlers(data.uploaderIp, uploaderCertificate, data.fileSize, data.magneticLink, declarationId);
             uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
             const commitmentResponse = await axios.post(`${peerEndpoint}/commit`, uploaderToPay.commitment.commitmentMessage);
         }
@@ -95,10 +111,10 @@ export class MessagesHandler{
             magneticLink: data.magneticLink
         }
 
-        try{
+        try {
             const paymentResponse = await axios.post(`${peerEndpoint}/pay`, paymentMessage);
             console.log(`[INFO] Paid ip ${data.uploaderIp} for a block from torrent ${data.magneticLink}`)
-        } catch (e){
+        } catch (e) {
             console.log(`[ERROR] Payment not accepted ${e}`)
         }
     }
@@ -106,7 +122,7 @@ export class MessagesHandler{
     private handleAuthentication = (data: IAuthenticatedMessageData) => {
         this.sessionController = startPayfluxoServer(data.privateKey, data.certificate, data.mspId, this.notificationHandler);
         tryNatTraversal().catch((err) => {
-            console.log("[ERROR]: ", err.message) 
+            console.log("[ERROR]: ", err.message)
             this.notificationHandler.notifyNATIssue();
         });
 
@@ -114,11 +130,11 @@ export class MessagesHandler{
     }
 
     private handleClosing = () => {
-        if (this.sessionController){
-                SessionSaver.saveSession(this.sessionController);
-                this.sessionController.closeServer();
+        if (this.sessionController) {
+            SessionSaver.saveSession(this.sessionController);
+            this.sessionController.closeServer();
         }
-        
+
         process.exit();
     }
 
@@ -126,5 +142,18 @@ export class MessagesHandler{
         SessionSaver.saveSession(this.sessionController);
         this.sessionController.closeServer();
         this.sessionController = undefined;
+    }
+
+    private declareNewPaymentIntention = async (data: IDownloadIntentionMessageData ) => {
+        const piecePrice = await this.sessionController.paymentIntentionContract.queryGetPiecePrice();
+        const paymentIntention = await this.sessionController.paymentIntentionContract.invokeCreatePaymentIntention(
+            data.magneticLink,
+            data.piecesNumber * piecePrice
+        );
+        if (paymentIntention.id) {
+            this.sessionController.downloadDeclarationIntentions[data.magneticLink] = paymentIntention.id;
+        }
+
+        return paymentIntention;
     }
 }

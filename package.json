@@ -5,8 +5,14 @@
   "main": "index.js",
   "bin": "dist/app.js",
   "pkg": {
-    "assets": [ "node_modules/**/*", "dist/**/*"],
-    "targets": [ "node14-linux-x64", "node14-win-x64"]
+    "assets": [
+      "node_modules/**/*",
+      "dist/**/*"
+    ],
+    "targets": [
+      "node14-linux-x64",
+      "node14-win-x64"
+    ]
   },
   "scripts": {
     "start": "tsc && node dist/app.js",
@@ -27,6 +33,7 @@
   "devDependencies": {
     "@types/elliptic": "^6.4.12",
     "@types/express": "^4.16.1",
+    "@types/node": "^16.3.3",
     "@types/ws": "^7.4.4",
     "@types/crypto-js": "^4.0.1",
     "@types/jest": "^26.0.22",
@@ -47,6 +54,7 @@
     "express": "^4.16.4",
     "fabric-network": "^2.2.5",
     "nat-puncher": "^0.1.8",
+    "uuid": "^8.3.2",
     "ws": "^7.4.5"
   }
 }

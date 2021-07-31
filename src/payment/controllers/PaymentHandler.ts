@@ -12,7 +12,8 @@ export class PaymentHandler {
         paymentSize: number,
         userPrivateKey: string,
         magneticLink: string,
-        userCertificate: string) => {
+        userCertificate: string,
+        downloadIntentionId: string) => {
         const hashChainSize = paymentSize / (1024 * 16)
         this.hashChain = new HashChain();
         this.hashChain.initHashChain(hashChainSize);
@@ -23,7 +24,8 @@ export class PaymentHandler {
             receiverCertificate, 
             this.hashChain.getHashRoot(), 
             userPrivateKey,
-            userCertificate)
+            userCertificate,
+            downloadIntentionId)
     }
 
     public loadPaymentHandler = (ip: string, commitment: CommitmentMessage, hashChain: string[], lastHashSent: string, lastHashIndex: number) => {

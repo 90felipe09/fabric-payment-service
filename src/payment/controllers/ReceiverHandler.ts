@@ -1,10 +1,10 @@
 import sha256 from 'crypto-js/sha256';
-import { CommitmentContent } from "../models/Commitment";
+import { CommitmentMessage } from "../models/Commitment";
 
 export class ReceiverHandler {
     loadedPayerPublicKey: string;
     payerIp: string;
-    commitment: CommitmentContent;
+    commitment: CommitmentMessage;
     lastHash: string;
     lastHashIndex: number;
     lastHashRedeemed: string;
@@ -13,12 +13,12 @@ export class ReceiverHandler {
     public constructor(
         payerIp: string, 
         payerPublicKey: string,
-        commitment: CommitmentContent
+        commitment: CommitmentMessage
         ){
         this.loadedPayerPublicKey = payerPublicKey;
         this.commitment = commitment;
         this.payerIp = payerIp;
-        this.lastHash = commitment.hashRoot;
+        this.lastHash = commitment.data.hash_root;
         this.lastHashIndex = 0;
     }
 

@@ -45,6 +45,8 @@ export class SessionLoader {
                     receiverHandler.lastHashRedeemedIndex
                 );
             })
+
+            sessionController.recoverDownloadIntentions(sessionData.downloadDeclarations);
           });
     }
 }

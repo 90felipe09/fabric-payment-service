@@ -1,15 +1,24 @@
 import axios from "axios";
+import sha256 from 'crypto-js/sha256';
 import http from 'http';
 import { PAYFLUXO_USING_PORT } from "../../config";
-import { Commitment, CommitmentContent, CommitmentMessage } from "../models/Commitment";
+import { AccountContract } from "../../hyperledger/smart-contracts/AccountContract";
+import { PaymentIntentionContract, PaymentIntentionResponse } from "../../hyperledger/smart-contracts/PaymentIntentionContract";
+import { RedeemContract } from "../../hyperledger/smart-contracts/RedeemContract";
+import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
+import { Commitment, CommitmentMessage } from "../models/Commitment";
 import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
 import { MicropaymentRequest } from "../models/MicropaymentRequest";
 import { CommitmentNotFoundResponse, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
+import { TorrenteWallet } from "../models/TorrenteWallet";
 import { getPeerHash } from "../utils/peerHash";
 import { PaymentHandler } from "./PaymentHandler";
 import { ReceiverHandler } from "./ReceiverHandler";
 
+export type DownloadDeclarationIntentionsMap = {
+    [magneticLink: string]: string,
+}
 export class SessionController {
     loadedUserKey: string;
     loadedUserCertificate: string;
@@ -19,6 +28,12 @@ export class SessionController {
 
     payfluxoServer: http.Server;
 
+    downloadDeclarationIntentions: DownloadDeclarationIntentionsMap;
+
+    redeemContract: RedeemContract;
+    paymentIntentionContract: PaymentIntentionContract;
+    accountContract: AccountContract;
+
     public constructor (userPrivateKey: string, userCertificate: string, userMSP: string, payfluxoServer: http.Server){
         this.loadedUserKey = userPrivateKey;
         this.loadedUserCertificate = userCertificate;
@@ -27,6 +42,51 @@ export class SessionController {
         this.paymentHandlers = {};
 
         this.payfluxoServer = payfluxoServer;
+
+        const authData: IAuthenticatedMessageData = {
+            certificate: this.loadedUserCertificate,
+            mspId: this.loadedUserMSP,
+            privateKey: this.loadedUserKey
+        }
+
+        this.redeemContract = new RedeemContract(authData);
+        this.paymentIntentionContract = new PaymentIntentionContract(authData);
+        this.accountContract = new AccountContract(authData);
+    }
+
+    public getWallet = async (): Promise<TorrenteWallet> => {
+        const accountId: string = sha256(this.loadedUserCertificate).toString();
+        const account = await this.accountContract.evaluateAccount(accountId);
+        const availableFunds: number = parseFloat(account.balance);
+        const reedemableValues: number = await this.getReedemableValues();
+        const frozenValues: number = await this.getFrozenValues();
+        return {
+            available: availableFunds,
+            frozen: frozenValues,
+            redeemable: reedemableValues
+        }
+    }
+
+    private getFrozenValues = async (): Promise<number> => {
+        const paymentIntentionsPromises: Promise<PaymentIntentionResponse>[] = Object.values(
+            this.downloadDeclarationIntentions).map(downloadIntentionId => {
+                return this.paymentIntentionContract.invokeReadPaymentIntention(downloadIntentionId);
+        })
+        const paymentIntentions = await Promise.all(paymentIntentionsPromises);
+        const frozenValues: number = paymentIntentions.reduce((acc, paymentIntention) => {
+            acc += paymentIntention.available_funds;
+            return acc;
+        }, 0);
+        return frozenValues;
+    }
+
+    private getReedemableValues = async (): Promise<number> => {
+        const reedemableHashesNumber: number = Object.values(this.receivingListeners).reduce((acc, receiverListener) => {
+            acc += (receiverListener.lastHashIndex - receiverListener.lastHashRedeemedIndex);
+            return acc;
+        }, 0);
+        const piecePrice = await this.paymentIntentionContract.queryGetPiecePrice();
+        return reedemableHashesNumber * piecePrice;
     }
 
     public closeServer = () => {
@@ -59,11 +119,13 @@ export class SessionController {
 
         const commitmentIsValid = Commitment.validateSignature(commitmentMessage, certificate)
         
-        if (commitmentIsValid){
+        const isIntentionValid = this.isIntentionValid(commitmentMessage.data.payment_intention_id)
+
+        if (commitmentIsValid && isIntentionValid){
             this.addReceivingListener(
                 requesterIp,
                 certificate,
-                commitmentMessage.content
+                commitmentMessage
             )
             return SuccesfulCommitResponse;
         }
@@ -72,13 +134,13 @@ export class SessionController {
         }
     }
 
-    public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentContent){
+    public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentMessage){
         const newReceiverListener = new ReceiverHandler(
             payerIp, 
             payerPublicKey,
             commitment
             );
-        const magneticLink = commitment.magneticLink
+        const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
 
         this.receivingListeners[receiverHash] = newReceiverListener;
@@ -87,7 +149,7 @@ export class SessionController {
     public recoverReceivingListener(
         payerIp: string,
         payerPublicKey: string,
-        commitment: CommitmentContent,
+        commitment: CommitmentMessage,
         lastHashReceived: string,
         lastHashReceivedIndex: number,
         lastHashRedeemed: string,
@@ -98,7 +160,7 @@ export class SessionController {
             payerPublicKey,
             commitment
             );
-        const magneticLink = commitment.magneticLink
+        const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
 
         newReceiverListener.loadState(
@@ -114,7 +176,8 @@ export class SessionController {
         receiverIp: string, 
         receiverPublicKey: string, 
         numberOfBlocks: number,
-        magneticLink: string
+        magneticLink: string,
+        downloadIntentionId: string
         ){
         const newPaymentController = new PaymentHandler()
     
@@ -124,7 +187,8 @@ export class SessionController {
             numberOfBlocks,
             this.loadedUserKey,
             magneticLink,
-            this.loadedUserCertificate)
+            this.loadedUserCertificate,
+            downloadIntentionId)
 
         const receiverHash = getPeerHash(receiverIp, magneticLink);
 
@@ -146,5 +210,20 @@ export class SessionController {
         const receiverHash = getPeerHash(receiverIp, magneticLink);
 
         this.paymentHandlers[receiverHash] = newPaymentController;
+    }
+
+    public recoverDownloadIntentions(
+        downloadIntentions: DownloadDeclarationIntentionsMap
+    ) {
+        this.downloadDeclarationIntentions = downloadIntentions;
+    }
+
+    public isIntentionValid = async (intentionId: string) => {
+        if (intentionId) {
+            const declarationReference = await this.paymentIntentionContract.invokeReadPaymentIntention(intentionId);
+            const isNotExpired = new Date(Date.parse(declarationReference.expiration_date)) > new Date();
+            return isNotExpired;
+        }
+        return false;
     }
 }
