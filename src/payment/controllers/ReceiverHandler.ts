@@ -1,5 +1,6 @@
 import sha256 from 'crypto-js/sha256';
 import { CommitmentMessage } from "../models/Commitment";
+import { RedeemTimer } from '../models/RedeemTimer';
 
 export class ReceiverHandler {
     loadedPayerPublicKey: string;
@@ -9,17 +10,20 @@ export class ReceiverHandler {
     lastHashIndex: number;
     lastHashRedeemed: string;
     lastHashRedeemedIndex: number;
+    redeemTimer: RedeemTimer;
 
     public constructor(
         payerIp: string, 
         payerPublicKey: string,
-        commitment: CommitmentMessage
+        commitment: CommitmentMessage,
+        redeemRoutine: (receiverListener: ReceiverHandler) => Promise<void>
         ){
         this.loadedPayerPublicKey = payerPublicKey;
         this.commitment = commitment;
         this.payerIp = payerIp;
         this.lastHash = commitment.data.hash_root;
         this.lastHashIndex = 0;
+        this.redeemTimer = new RedeemTimer(this, redeemRoutine);
     }
 
     public loadState = (
