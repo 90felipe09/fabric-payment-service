@@ -105,6 +105,7 @@ export class SessionController {
         const receiverListener = this.receivingListeners[payerHash];
         if (receiverListener){
             if (receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
+                receiverListener.redeemTimer.resetTimer();
                 return SuccesfulPaymentResponse;
             }
             return WrongPaymentResponse;
@@ -134,11 +135,20 @@ export class SessionController {
         }
     }
 
+    public handleRedeemValues = async (receiverListener: ReceiverHandler) => {
+        await this.redeemContract.invokeRedeem(
+            receiverListener.commitment,
+            receiverListener.lastHash,
+            receiverListener.lastHashIndex);
+        receiverListener.redeemTimer.stopTimer();
+    }
+
     public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentMessage){
         const newReceiverListener = new ReceiverHandler(
             payerIp, 
             payerPublicKey,
-            commitment
+            commitment,
+            this.handleRedeemValues
             );
         const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
@@ -158,7 +168,8 @@ export class SessionController {
         const newReceiverListener = new ReceiverHandler(
             payerIp, 
             payerPublicKey,
-            commitment
+            commitment,
+            this.handleRedeemValues
             );
         const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);

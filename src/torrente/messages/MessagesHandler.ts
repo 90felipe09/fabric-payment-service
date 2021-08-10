@@ -55,10 +55,7 @@ export class MessagesHandler {
 
     private handleRedeemValues = async () => {
         const redeemPromises = Object.values(this.sessionController.receivingListeners).map(receiverListener => {
-            this.sessionController.redeemContract.invokeRedeem(
-                receiverListener.commitment,
-                receiverListener.lastHash,
-                receiverListener.lastHashIndex);
+            this.sessionController.handleRedeemValues(receiverListener);
         });
         await Promise.all(redeemPromises);
         console.log("[DEBUG] Redeem values requested");
