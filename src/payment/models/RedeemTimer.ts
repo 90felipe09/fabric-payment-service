@@ -21,8 +21,15 @@ export class RedeemTimer {
         this.intervalObject = setInterval(() => {
             this.timer -= 1;
             if (this.timer <= 0){
-                this.redeemRoutine(this.receiverHandlerReference);
-                this.stopTimer();
+                try{
+                    this.redeemRoutine(this.receiverHandlerReference);
+                    console.log (`[INFO] Automatic redeem succeded`);
+                    this.stopTimer();
+                }
+                catch{
+                    console.log (`[ERROR] Couldn't redeem automatically`);
+                    this.stopTimer();
+                }
             }
         }, SECONDS_IN_MINUTE * MIL_IN_SECONDS);
     }

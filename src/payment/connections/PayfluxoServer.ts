@@ -37,6 +37,9 @@ export const startPayfluxoServer = (privateKey: string, certificate: string, msp
             notificationHandler.notifyPayment(requesterIp, micropaymentRequest.magneticLink)
             console.log(`[INFO] ip ${requesterIp} payment is valid`);
         }
+        else {
+            console.log(`[ERROR] ip ${requesterIp} payment is invalid`)
+        }
     })
 
     app.post('/commit', async (req, res) => {
@@ -51,6 +54,14 @@ export const startPayfluxoServer = (privateKey: string, certificate: string, msp
         const response = await sessionController.handleCommit(commitmentMessage, requesterIp);
 
         res.status(response['status']).send(response['content']);
+
+        if(response['status'] === 200)
+        {
+            console.log(`[INFO] ip ${requesterIp} commitment is valid`);
+        }
+        else {
+            console.log(`[ERROR] ip ${requesterIp} commitment is invalid`)
+        }
     })
 
     app.get('/certificate', (req, res) => {
