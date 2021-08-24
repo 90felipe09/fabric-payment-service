@@ -52,6 +52,12 @@ export class SessionController {
         this.redeemContract = new RedeemContract(authData);
         this.paymentIntentionContract = new PaymentIntentionContract(authData);
         this.accountContract = new AccountContract(authData);
+
+        this.redeemContract.init();
+        this.paymentIntentionContract.init();
+        this.accountContract.init();
+
+        this.downloadDeclarationIntentions = {};
     }
 
     public getWallet = async (): Promise<TorrenteWallet> => {

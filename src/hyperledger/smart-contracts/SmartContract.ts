@@ -14,7 +14,13 @@ export class SmartContract {
     }
 
     public init = async () => {
-        this.contract = await this.gatewayConnection.getMicropaymentChaincodeReference(this.smartContractName);
+        try{
+            this.contract = await this.gatewayConnection.getMicropaymentChaincodeReference(this.smartContractName);
+        }
+        catch (error){
+            console.log(`[ERROR] Couldn't feetch contract reference: ${error}`)
+        }
+        
     };
 
     protected invokeTransaction = async (name: string, args: any[]): Promise<any> => {
