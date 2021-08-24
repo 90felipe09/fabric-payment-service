@@ -25,7 +25,10 @@ export class GatewayConnection {
             this.wallet = wallet;
             const gatewayOptions: GatewayOptions = {
                 identity: this.clientIdentity,
-                wallet: wallet
+                wallet: wallet,
+                discovery: {
+                    enabled: false
+                }
             };
             const connectionProfile = jsonfile;
             const gateway = new Gateway();
