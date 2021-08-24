@@ -44,9 +44,9 @@ export class SessionController {
         this.payfluxoServer = payfluxoServer;
 
         const authData: IAuthenticatedMessageData = {
-            certificate: this.loadedUserCertificate,
-            mspId: this.loadedUserMSP,
-            privateKey: this.loadedUserKey
+            certificate: userCertificate,
+            mspId: userMSP,
+            privateKey: userPrivateKey
         }
 
         this.redeemContract = new RedeemContract(authData);
