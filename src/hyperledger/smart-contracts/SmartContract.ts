@@ -21,8 +21,8 @@ export class SmartContract {
         try {
             return this.contract.submitTransaction(name, ...args);
         } catch (error) {
-            console.log(`Getting error: ${error}`)
-            return error.message
+            console.log(`[ERROR] Smart Contract error: ${error}`)
+            throw error
         }
     }
 
@@ -30,8 +30,8 @@ export class SmartContract {
         try {
             return this.contract.evaluateTransaction(name, ...args);
         } catch (error) {
-            console.log(`Getting error: ${error}`)
-            return error.message
+            console.log(`[ERROR] Smart Contract error: ${error}`)
+            throw error
         }
     }
 }

@@ -55,7 +55,12 @@ export class MessagesHandler {
 
     private handleRedeemValues = async () => {
         const redeemPromises = Object.values(this.sessionController.receivingListeners).map(receiverListener => {
-            this.sessionController.handleRedeemValues(receiverListener);
+            try{
+                this.sessionController.handleRedeemValues(receiverListener);
+            }
+            catch{
+                console.log(`[ERROR] Couldn't redeem values for receiverlistener ${receiverListener.commitment.commitment_hash}`);
+            }
         });
         await Promise.all(redeemPromises);
         console.log("[DEBUG] Redeem values requested");
@@ -65,28 +70,45 @@ export class MessagesHandler {
 
     private handleRefreshWallet = async () => {
         console.log("[DEBUG] Wallet refresh notified");
-
-        const accountWallet = await this.sessionController.getWallet();
-
-        this.notificationHandler.notifyWalletRefresh(accountWallet);
+        try{
+            const accountWallet = await this.sessionController.getWallet();
+    
+            this.notificationHandler.notifyWalletRefresh(accountWallet);
+        }
+        catch{
+            console.log("[ERROR] Couldn't fetch wallet state");
+        }
     }
 
     private handleDownloadIntention = async (data: IDownloadIntentionMessageData) => {
         let declarationId = this.sessionController.downloadDeclarationIntentions[data.magneticLink];
         const isValid = await this.sessionController.isIntentionValid(declarationId);
         if (isValid) {
-            const paymentIntention = await this.declareNewPaymentIntention(data);
-            declarationId = paymentIntention.id;
+            try {
+                const paymentIntention = await this.declareNewPaymentIntention(data);
+                declarationId = paymentIntention.id;
+                if (!!declarationId) {
+                    this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId,
+                        DownloadDeclarationIntentionStatusEnum.SUCCESS);
+                }
+                else {
+                    console.log("[INFO] Download intention declaration succeded")
+                    this.notificationHandler.notifyDownloadDeclarationIntentionStatus(
+                        data.torrentId,
+                        DownloadDeclarationIntentionStatusEnum.NO_FUNDS
+                    );
+                }
+            }
+            catch{
+                console.log("[ERROR] No funds to declare download intention")
+                this.notificationHandler.notifyDownloadDeclarationIntentionStatus(
+                    data.torrentId,
+                    DownloadDeclarationIntentionStatusEnum.NO_FUNDS
+                );
+            }
         }
-        if (!!declarationId) {
-            this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId,
-                DownloadDeclarationIntentionStatusEnum.SUCCESS);
-        } else {
-            this.notificationHandler.notifyDownloadDeclarationIntentionStatus(
-                data.torrentId,
-                DownloadDeclarationIntentionStatusEnum.NO_FUNDS
-            );
-        }
+        
+        
     }
 
     private handleDownloadedBlock = async (data: IDownloadedBlockMessageData) => {
@@ -94,12 +116,24 @@ export class MessagesHandler {
         const uploaderHash = `${data.magneticLink}@${data.uploaderIp}`
         var uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
         if (!uploaderToPay) {
-            const certificateResponse = await axios.get(`${peerEndpoint}/certificate`);
-            const uploaderCertificate = certificateResponse.data['certificate'];
-            const declarationId = this.sessionController.downloadDeclarationIntentions[data.magneticLink];
-            this.sessionController.addpaymentHandlers(data.uploaderIp, uploaderCertificate, data.fileSize, data.magneticLink, declarationId);
-            uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
-            const commitmentResponse = await axios.post(`${peerEndpoint}/commit`, uploaderToPay.commitment.commitmentMessage);
+            try{
+                const certificateResponse = await axios.get(`${peerEndpoint}/certificate`);
+                const uploaderCertificate = certificateResponse.data['certificate'];
+                const declarationId = this.sessionController.downloadDeclarationIntentions[data.magneticLink];
+                this.sessionController.addpaymentHandlers(data.uploaderIp, uploaderCertificate, data.fileSize, data.magneticLink, declarationId);
+                uploaderToPay = this.sessionController.paymentHandlers[uploaderHash]
+                try {
+                    const commitmentResponse = await axios.post(`${peerEndpoint}/commit`, uploaderToPay.commitment.commitmentMessage);
+                }
+                catch{
+                    console.log(`[ERROR] Peer ${data.uploaderIp} didn't accept commit message`);
+                    return;
+                }
+            }
+            catch{
+                console.log(`[ERROR] Peer ${data.uploaderIp} maybe is not Torrente`);
+                return;
+            }
         }
         const [hashLinkToPay, hashLinkIndex] = uploaderToPay.payHash();
         const paymentMessage: MicropaymentRequest = {
@@ -112,7 +146,7 @@ export class MessagesHandler {
             const paymentResponse = await axios.post(`${peerEndpoint}/pay`, paymentMessage);
             console.log(`[INFO] Paid ip ${data.uploaderIp} for a block from torrent ${data.magneticLink}`)
         } catch (e) {
-            console.log(`[ERROR] Payment not accepted ${e}`)
+            console.log(`[ERROR] Payment not accepted from ${data.uploaderIp}: ${e}`)
         }
     }
 
