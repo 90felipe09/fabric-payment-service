@@ -1,5 +1,5 @@
-import sha256 from 'crypto-js/sha256';
 import { Contract, Gateway, GatewayOptions, Network, Wallet, Wallets, X509Identity } from 'fabric-network';
+import { getAddress } from '../../payment/utils/userAddress';
 import { IAuthenticatedMessageData } from '../../torrente/messages/models/AuthenticatedMessage';
 import { CHAINCODE_ID, PAYMENT_CHANNEL } from '../config';
 
@@ -20,14 +20,15 @@ export class GatewayConnection {
     private connectToPeerGateway = async(): Promise<Gateway> => {
         if (!this.peerGateway) {
             const wallet = await Wallets.newInMemoryWallet();
-            const userLabel: string = sha256(this.clientIdentity.credentials.certificate).toString();
+            const userLabel: string = getAddress(this.clientIdentity.credentials.certificate);
             await wallet.put(userLabel, this.clientIdentity);
             this.wallet = wallet;
             const gatewayOptions: GatewayOptions = {
                 identity: this.clientIdentity,
                 wallet: wallet,
                 discovery: {
-                    enabled: false
+                    enabled: true,
+                    asLocalhost: false                    
                 }
             };
             const connectionProfile = jsonfile;
