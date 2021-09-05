@@ -1,0 +1,1 @@
+export const PLANOC_ENDPOINT = "http://amazoniaweb.duckdns.org:9876"
