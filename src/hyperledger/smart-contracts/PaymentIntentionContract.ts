@@ -1,25 +1,16 @@
 import { Contract } from "fabric-network";
 import { v4 as uuidv4 } from "uuid";
+import { PaymentIntentionResponse } from "../../payment/models/PaymentServiceInterface";
 import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
 import { PAYMENT_INTENTION_CONTRACT } from "../config";
 import { SmartContract } from "./SmartContract";
 
-type PaymentAttributes = {
-    id: string,
+export type PaymentAttributes = {
+    id: string;
     magnetic_link: string;
     value_to_freeze: number;
     expiration_date: string;
-    created_at: string 
-}
-
-export type PaymentIntentionResponse = {
-    id: string,
-    magnetic_link: string,
-    payer_address: string,
-    value_to_freeze: number,
-    available_funds: number,
-    expiration_date: string,
-    created_at: string
+    created_at: string;
 }
 
 export const EXPIRATION_DELTA_DAYS = 7;

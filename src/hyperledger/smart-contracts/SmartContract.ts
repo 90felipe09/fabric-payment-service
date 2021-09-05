@@ -14,11 +14,20 @@ export class SmartContract {
     }
 
     public init = async () => {
-        this.contract = await this.gatewayConnection.getMicropaymentChaincodeReference(this.smartContractName);
+        try{
+            console.log(`[INFO] Fetching chaincode reference for ${this.smartContractName}`)
+            this.contract = await this.gatewayConnection.getMicropaymentChaincodeReference(this.smartContractName);
+            console.log(`[INFO] Contract reference obtained: ${this.contract.chaincodeId}`)
+        }
+        catch (error){
+            console.log(`[ERROR] Couldn't feetch contract reference: ${error}`)
+        }
     };
 
-    protected invokeTransaction = async (name: string, args: any[]): Promise<any> => {
+    protected invokeTransaction = async (transactionName: string, args: any[]): Promise<any> => {
         try {
+            console.log(`[INFO] Perform transaction invoke ${transactionName}(${args})`)
+            const name = `${this.smartContractName}:${transactionName}`;
             return this.contract.submitTransaction(name, ...args);
         } catch (error) {
             console.log(`[ERROR] Smart Contract error: ${error}`)
@@ -26,9 +35,11 @@ export class SmartContract {
         }
     }
 
-    protected evaluateTransaction = async (name: string, args: any[]): Promise<any> => {
+    protected evaluateTransaction = async (transactionName: string, args: any[]): Promise<any> => {
         try {
-            return this.contract.evaluateTransaction(name, ...args);
+            const name = `${this.smartContractName}:${transactionName}`;
+            console.log(`[INFO] Perform transaction evaluation ${name}(${args})`)
+            return await this.contract.evaluateTransaction(name, ...args);
         } catch (error) {
             console.log(`[ERROR] Smart Contract error: ${error}`)
             throw error

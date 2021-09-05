@@ -1,18 +1,17 @@
 import axios from "axios";
-import sha256 from 'crypto-js/sha256';
 import http from 'http';
-import { PAYFLUXO_USING_PORT } from "../../config";
-import { AccountContract } from "../../hyperledger/smart-contracts/AccountContract";
-import { PaymentIntentionContract, PaymentIntentionResponse } from "../../hyperledger/smart-contracts/PaymentIntentionContract";
-import { RedeemContract } from "../../hyperledger/smart-contracts/RedeemContract";
+import { PAYFLUXO_USING_PORT, PAYMENT_SERVICE } from "../../config";
 import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
+import { IDownloadIntentionMessageData } from "../../torrente/messages/models/DownloadIntentionMessage";
 import { Commitment, CommitmentMessage } from "../models/Commitment";
 import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
 import { MicropaymentRequest } from "../models/MicropaymentRequest";
 import { CommitmentNotFoundResponse, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
+import { CreatePaymentIntentionArguments, PaymentIntentionResponse, PaymentServiceInterface, RedeemArguments } from "../models/PaymentServiceInterface";
 import { TorrenteWallet } from "../models/TorrenteWallet";
 import { getPeerHash } from "../utils/peerHash";
+import { getAddress } from "../utils/userAddress";
 import { PaymentHandler } from "./PaymentHandler";
 import { ReceiverHandler } from "./ReceiverHandler";
 
@@ -30,9 +29,7 @@ export class SessionController {
 
     downloadDeclarationIntentions: DownloadDeclarationIntentionsMap;
 
-    redeemContract: RedeemContract;
-    paymentIntentionContract: PaymentIntentionContract;
-    accountContract: AccountContract;
+    paymentService: PaymentServiceInterface;
 
     public constructor (userPrivateKey: string, userCertificate: string, userMSP: string, payfluxoServer: http.Server){
         this.loadedUserKey = userPrivateKey;
@@ -44,19 +41,21 @@ export class SessionController {
         this.payfluxoServer = payfluxoServer;
 
         const authData: IAuthenticatedMessageData = {
-            certificate: this.loadedUserCertificate,
-            mspId: this.loadedUserMSP,
-            privateKey: this.loadedUserKey
+            certificate: userCertificate,
+            mspId: userMSP,
+            privateKey: userPrivateKey
         }
 
-        this.redeemContract = new RedeemContract(authData);
-        this.paymentIntentionContract = new PaymentIntentionContract(authData);
-        this.accountContract = new AccountContract(authData);
+        this.paymentService = PAYMENT_SERVICE
+
+        this.paymentService.init(authData);
+
+        this.downloadDeclarationIntentions = {};
     }
 
     public getWallet = async (): Promise<TorrenteWallet> => {
-        const accountId: string = sha256(this.loadedUserCertificate).toString();
-        const account = await this.accountContract.evaluateAccount(accountId);
+        const accountId: string = getAddress(this.loadedUserCertificate);
+        const account = await this.paymentService.evaluateAccount(accountId);
         const availableFunds: number = parseFloat(account.balance);
         const reedemableValues: number = await this.getReedemableValues();
         const frozenValues: number = await this.getFrozenValues();
@@ -68,25 +67,49 @@ export class SessionController {
     }
 
     private getFrozenValues = async (): Promise<number> => {
-        const paymentIntentionsPromises: Promise<PaymentIntentionResponse>[] = Object.values(
-            this.downloadDeclarationIntentions).map(downloadIntentionId => {
-                return this.paymentIntentionContract.invokeReadPaymentIntention(downloadIntentionId);
-        })
-        const paymentIntentions = await Promise.all(paymentIntentionsPromises);
-        const frozenValues: number = paymentIntentions.reduce((acc, paymentIntention) => {
-            acc += paymentIntention.available_funds;
-            return acc;
-        }, 0);
-        return frozenValues;
+        try{
+            const paymentIntentionsPromises: Promise<PaymentIntentionResponse>[] = Object.values(
+                this.downloadDeclarationIntentions).map(downloadIntentionId => {
+                    return this.paymentService.invokeReadPaymentIntention(downloadIntentionId);
+            })
+            const paymentIntentions = await Promise.all(paymentIntentionsPromises);
+            const frozenValues: number = paymentIntentions.reduce((acc, paymentIntention) => {
+                acc += paymentIntention.available_funds;
+                return acc;
+            }, 0);
+            return frozenValues;
+        }
+        catch {
+            throw (Error("[ERROR] Couldn't fetch payment intentions."))
+        }
     }
 
     private getReedemableValues = async (): Promise<number> => {
-        const reedemableHashesNumber: number = Object.values(this.receivingListeners).reduce((acc, receiverListener) => {
-            acc += (receiverListener.lastHashIndex - receiverListener.lastHashRedeemedIndex);
-            return acc;
-        }, 0);
-        const piecePrice = await this.paymentIntentionContract.queryGetPiecePrice();
-        return reedemableHashesNumber * piecePrice;
+        try{
+            const reedemableHashesNumber: number = Object.values(this.receivingListeners).reduce((acc, receiverListener) => {
+                acc += (receiverListener.lastHashIndex - receiverListener.lastHashRedeemedIndex);
+                return acc;
+            }, 0);
+            const piecePrice = await this.paymentService.queryGetPiecePrice();
+            return reedemableHashesNumber * piecePrice;
+        }
+        catch{
+            throw (Error("[ERROR] Couldn't fetch piece price."))
+        }
+    }
+
+    public declareNewPaymentIntention = async (data: IDownloadIntentionMessageData ) => {
+        const piecePrice = await this.paymentService.queryGetPiecePrice();
+        const paymentIntentionArgs: CreatePaymentIntentionArguments = {
+            magneticLink: data.magneticLink,
+            valueToFreeze: data.piecesNumber * piecePrice
+        }
+        const paymentIntention = await this.paymentService.invokeCreatePaymentIntention(paymentIntentionArgs);
+        if (paymentIntention.id) {
+            this.downloadDeclarationIntentions[data.magneticLink] = paymentIntention.id;
+        }
+
+        return paymentIntention;
     }
 
     public closeServer = () => {
@@ -136,10 +159,12 @@ export class SessionController {
     }
 
     public handleRedeemValues = async (receiverListener: ReceiverHandler) => {
-        await this.redeemContract.invokeRedeem(
-            receiverListener.commitment,
-            receiverListener.lastHash,
-            receiverListener.lastHashIndex);
+        const redeemArguments: RedeemArguments = {
+            commitment: receiverListener.commitment,
+            hashLink: receiverListener.lastHash,
+            hashLinkIndex: receiverListener.lastHashIndex
+        }
+        await this.paymentService.invokeRedeem(redeemArguments);
         receiverListener.redeemTimer.stopTimer();
     }
 
@@ -231,10 +256,14 @@ export class SessionController {
 
     public isIntentionValid = async (intentionId: string) => {
         if (intentionId) {
-            const declarationReference = await this.paymentIntentionContract.invokeReadPaymentIntention(intentionId);
+            const declarationReference = await this.paymentService.invokeReadPaymentIntention(intentionId);
             const isNotExpired = new Date(Date.parse(declarationReference.expiration_date)) > new Date();
             return isNotExpired;
         }
         return false;
     }
+}
+
+function getAddressthis(loadedUserCertificate: any): string {
+    throw new Error("Function not implemented.");
 }

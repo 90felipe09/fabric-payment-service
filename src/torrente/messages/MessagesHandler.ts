@@ -75,8 +75,8 @@ export class MessagesHandler {
     
             this.notificationHandler.notifyWalletRefresh(accountWallet);
         }
-        catch{
-            console.log("[ERROR] Couldn't fetch wallet state");
+        catch(e){
+            console.log(`[ERROR] Couldn't fetch wallet state: ${e}`);
         }
     }
 
@@ -85,7 +85,7 @@ export class MessagesHandler {
         const isValid = await this.sessionController.isIntentionValid(declarationId);
         if (isValid) {
             try {
-                const paymentIntention = await this.declareNewPaymentIntention(data);
+                const paymentIntention = await this.sessionController.declareNewPaymentIntention(data);
                 declarationId = paymentIntention.id;
                 if (!!declarationId) {
                     this.notificationHandler.notifyDownloadDeclarationIntentionStatus(data.torrentId,
@@ -174,17 +174,5 @@ export class MessagesHandler {
         this.sessionController.closeServer();
         this.sessionController = undefined;
     }
-
-    private declareNewPaymentIntention = async (data: IDownloadIntentionMessageData ) => {
-        const piecePrice = await this.sessionController.paymentIntentionContract.queryGetPiecePrice();
-        const paymentIntention = await this.sessionController.paymentIntentionContract.invokeCreatePaymentIntention(
-            data.magneticLink,
-            data.piecesNumber * piecePrice
-        );
-        if (paymentIntention.id) {
-            this.sessionController.downloadDeclarationIntentions[data.magneticLink] = paymentIntention.id;
-        }
-
-        return paymentIntention;
-    }
+    
 }
