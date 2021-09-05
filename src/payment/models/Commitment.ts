@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 import sha256 from 'crypto-js/sha256';
 
-const ALGORITHM = "SHA256";
+export const ALGORITHM = "SHA256";
 const SIGNATURE_ALGORITHM = "ECDSA";
 const HASHING_ALG_NAME = "SHA-256";
-const SIGNATURE_FORMAT = "hex";
+export const SIGNATURE_FORMAT = "hex";
 
 export type CommitmentMessage = {
     data: CommitmentContent;
