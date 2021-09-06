@@ -81,9 +81,10 @@ export class MessagesHandler {
     }
 
     private handleDownloadIntention = async (data: IDownloadIntentionMessageData) => {
+        console.log('[INFO] Requesting for download intention.')
         let declarationId = this.sessionController.downloadDeclarationIntentions[data.magneticLink];
         const isValid = await this.sessionController.isIntentionValid(declarationId);
-        if (isValid) {
+        if (!isValid) {
             try {
                 const paymentIntention = await this.sessionController.declareNewPaymentIntention(data);
                 declarationId = paymentIntention.id;
