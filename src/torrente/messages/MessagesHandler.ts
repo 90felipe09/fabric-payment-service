@@ -54,9 +54,9 @@ export class MessagesHandler {
     }
 
     private handleRedeemValues = async () => {
-        const redeemPromises = Object.values(this.sessionController.receivingListeners).map(receiverListener => {
+        const redeemPromises = Object.values(this.sessionController.receivingListeners).map(async(receiverListener) => {
             try{
-                this.sessionController.handleRedeemValues(receiverListener);
+                await this.sessionController.handleRedeemValues(receiverListener);
             }
             catch{
                 console.log(`[ERROR] Couldn't redeem values for receiverlistener ${receiverListener.commitment.commitment_hash}`);
