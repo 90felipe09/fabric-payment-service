@@ -18,11 +18,11 @@ export class RedeemTimer {
 
     public resetTimer = () => {
         this.timer = MINS_TO_REDEEM;
-        this.intervalObject = setInterval(() => {
+        this.intervalObject = setInterval(async () => {
             this.timer -= 1;
             if (this.timer <= 0){
                 try{
-                    this.redeemRoutine(this.receiverHandlerReference);
+                    await this.redeemRoutine(this.receiverHandlerReference);
                     console.log (`[INFO] Automatic redeem succeded`);
                     this.stopTimer();
                 }
