@@ -3,6 +3,7 @@ import { INotificationModel, NotificationTypesEnum } from "./NotificationModel";
 export interface IPaymentNotifyData {
     magneticLink: string;
     payerIp: string;
+    blocksPaid: number;
 }
 
 export class PaymentNotification implements INotificationModel <IPaymentNotifyData>{

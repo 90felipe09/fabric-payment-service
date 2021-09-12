@@ -14,7 +14,7 @@ export class PaymentHandler {
         magneticLink: string,
         userCertificate: string,
         downloadIntentionId: string) => {
-        const hashChainSize = paymentSize / (1024 * 16)
+        const hashChainSize = paymentSize
         this.hashChain = new HashChain();
         this.hashChain.initHashChain(hashChainSize);
         this.commitment = new Commitment();

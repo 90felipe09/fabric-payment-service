@@ -7,7 +7,7 @@ import { Commitment, CommitmentMessage } from "../models/Commitment";
 import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
 import { MicropaymentRequest } from "../models/MicropaymentRequest";
-import { CommitmentNotFoundResponse, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
+import { CommitmentNotFoundResponse, PaymentHandleReturn, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
 import { CreatePaymentIntentionArguments, PaymentIntentionResponse, PaymentServiceInterface, RedeemArguments } from "../models/PaymentServiceInterface";
 import { TorrenteWallet } from "../models/TorrenteWallet";
 import { getPeerHash } from "../utils/peerHash";
@@ -122,18 +122,37 @@ export class SessionController {
         this.payfluxoServer.close();
     }
 
-    public handleReceive(micropaymentRequest: MicropaymentRequest, requesterIp: string){
+    public handleReceive(micropaymentRequest: MicropaymentRequest, requesterIp: string): PaymentHandleReturn<any>{
         const payerHash = getPeerHash(requesterIp, micropaymentRequest.magneticLink);
 
         const receiverListener = this.receivingListeners[payerHash];
         if (receiverListener){
+            if (receiverListener.lastHashIndex >= micropaymentRequest.hashLinkIndex){
+                return {
+                    payerResponse: SuccesfulPaymentResponse,
+                    torrenteNotification: null
+                }
+            }
             if (receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
                 receiverListener.redeemTimer.resetTimer();
-                return SuccesfulPaymentResponse;
+                return {
+                      payerResponse: SuccesfulPaymentResponse,
+                      torrenteNotification: {
+                        blocksPaid: receiverListener.lastHashIndex,
+                        magneticLink: micropaymentRequest.magneticLink,
+                        payerIp: requesterIp
+                    }
+                }
             }
-            return WrongPaymentResponse;
+            return {
+                payerResponse: WrongPaymentResponse,
+                torrenteNotification: null
+            }
         }
-        return CommitmentNotFoundResponse;
+        return {
+            payerResponse: CommitmentNotFoundResponse,
+            torrenteNotification: null
+        };
     }
 
     public async handleCommit(commitmentMessage: CommitmentMessage, requesterIp: string){
