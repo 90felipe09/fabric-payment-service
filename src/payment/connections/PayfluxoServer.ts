@@ -30,12 +30,18 @@ export const startPayfluxoServer = (privateKey: string, certificate: string, msp
        
         console.log(`[INFO] ip ${requesterIp} accessed /pay endpoint`);
 
-        const response = sessionController.handleReceive(micropaymentRequest, requesterIp);
+        const handleReturn = sessionController.handleReceive(micropaymentRequest, requesterIp);
+        const response = handleReturn.payerResponse;
         res.status(response['status']).send(response['content']);
         if(response['status'] === 200)
         {
-            notificationHandler.notifyPayment(requesterIp, micropaymentRequest.magneticLink)
-            console.log(`[INFO] ip ${requesterIp} payment is valid`);
+            if (handleReturn.torrenteNotification){
+                notificationHandler.notifyPayment(handleReturn.torrenteNotification)
+                console.log(`[INFO] ip ${requesterIp} payment is valid`);
+            }
+            else{
+                console.log(`[INFO] Received out of order payment from ${requesterIp}`);
+            }
         }
         else {
             console.log(`[ERROR] ip ${requesterIp} payment is invalid`)

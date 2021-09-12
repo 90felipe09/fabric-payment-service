@@ -4,7 +4,7 @@ import { TorrenteWallet } from "../../payment/models/TorrenteWallet";
 import { ConnectionNotification } from "./models/ConnectionNotification";
 import { IntentionDeclaredNotification } from "./models/IntentionDeclaredNotification";
 import { NATNotification } from "./models/NATNotification";
-import { PaymentNotification } from "./models/PaymentNotification";
+import { IPaymentNotifyData, PaymentNotification } from "./models/PaymentNotification";
 import { WalletRefreshNotification } from "./models/WalletNotification";
 
 export enum DownloadDeclarationIntentionStatusEnum {
@@ -49,11 +49,8 @@ export class NotificationHandler {
         this.torrenteConnection.send(jsonNotification);
     }
 
-    notifyPayment(ip: string, magneticLink: string){
-        const notificationObject = new PaymentNotification({
-            payerIp: ip,
-            magneticLink: magneticLink
-        });
+    notifyPayment(paymentNotificationData: IPaymentNotifyData){
+        const notificationObject = new PaymentNotification(paymentNotificationData);
 
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());           
         this.torrenteConnection.send(jsonNotification);

@@ -1,7 +1,13 @@
+import { IPaymentNotifyData } from "../../torrente/notification/models/PaymentNotification";
 import { ResponseModel } from "./ResponseModel";
 
 export interface PaymentResponseContent {
     result: string;
+}
+
+export interface PaymentHandleReturn<T> {
+    payerResponse: ResponseModel<T>;
+    torrenteNotification: IPaymentNotifyData;
 }
 
 export const SuccesfulPaymentResponse: ResponseModel<PaymentResponseContent> = {
