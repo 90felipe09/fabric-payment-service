@@ -21,7 +21,3 @@ server.listen( 7777, () => {
   console.log("===========================================");
   console.log("Server started on port: 7777");
 }) 
-
-app.get('/test/payment', (req, res) => {
-  con.notificationHandler.notifyPayment("182.16.15.12", "test")
-})
