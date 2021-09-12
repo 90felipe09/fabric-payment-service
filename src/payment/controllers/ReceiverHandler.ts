@@ -23,7 +23,14 @@ export class ReceiverHandler {
         this.payerIp = payerIp;
         this.lastHash = commitment.data.hash_root;
         this.lastHashIndex = 0;
-        this.redeemTimer = new RedeemTimer(this, redeemRoutine);
+        this.lastHashRedeemedIndex = 0;
+        this.lastHashRedeemed = commitment.data.hash_root;
+        // this.redeemTimer = new RedeemTimer(this, redeemRoutine);
+    }
+
+    public updateRedeemableValues = (lastRedeemedHash: string, lastRedeemedHashIndex: number) => {
+        this.lastHashRedeemed = lastRedeemedHash;
+        this.lastHashRedeemedIndex = lastRedeemedHashIndex;
     }
 
     public loadState = (

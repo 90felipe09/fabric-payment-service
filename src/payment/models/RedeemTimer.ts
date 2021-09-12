@@ -26,8 +26,8 @@ export class RedeemTimer {
                     console.log (`[INFO] Automatic redeem succeded`);
                     this.stopTimer();
                 }
-                catch{
-                    console.log (`[ERROR] Couldn't redeem automatically`);
+                catch(e){
+                    console.log (`[ERROR] Couldn't redeem automatically: ${e}`);
                     this.stopTimer();
                 }
             }
@@ -35,6 +35,7 @@ export class RedeemTimer {
     }
 
     public stopTimer = () => {
+        this.resetTimer();
         clearInterval(this.intervalObject);
     }
 }
