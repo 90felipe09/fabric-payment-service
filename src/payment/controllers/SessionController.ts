@@ -134,7 +134,7 @@ export class SessionController {
                 }
             }
             if (receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
-                receiverListener.redeemTimer.resetTimer();
+                // receiverListener.redeemTimer.resetTimer();
                 return {
                       payerResponse: SuccesfulPaymentResponse,
                       torrenteNotification: {
@@ -184,7 +184,8 @@ export class SessionController {
             hashLinkIndex: receiverListener.lastHashIndex
         }
         await this.paymentService.invokeRedeem(redeemArguments);
-        receiverListener.redeemTimer.stopTimer();
+        receiverListener.updateRedeemableValues(redeemArguments.hashLink, redeemArguments.hashLinkIndex);
+        // receiverListener.redeemTimer.stopTimer();
     }
 
     public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentMessage){
