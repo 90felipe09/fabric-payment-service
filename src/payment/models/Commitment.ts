@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import sha256 from 'crypto-js/sha256';
+import { getAddress } from '../utils/userAddress';
 
 export const ALGORITHM = "SHA256";
 const SIGNATURE_ALGORITHM = "ECDSA";
@@ -41,8 +42,8 @@ export class Commitment {
 
         const commitmentContent: CommitmentContent = {
             data_id: magneticLink,
-            payer_address: sha256(userCertificate).toString(),
-            receiver_address: sha256(receiverCertificate).toString(),
+            payer_address: getAddress(userCertificate),
+            receiver_address: getAddress(receiverCertificate),
             hash_root: hashRoot,
             payment_intention_id: downloadIntentionId
         };
