@@ -7,7 +7,11 @@ import { SmartContract } from "./SmartContract";
 
 export type PaymentAttributes = {
     id: string;
-    magnetic_link: string;
+    torrent_attributes: TorrentAttributes
+}
+
+export type TorrentAttributes = {
+    data_id: string;
     value_to_freeze: number;
     expiration_date: string;
     created_at: string;
@@ -23,16 +27,19 @@ export class PaymentIntentionContract extends SmartContract {
 
     public invokeCreatePaymentIntention = async (magneticLink: string, valueToFreeze: number): Promise<PaymentIntentionResponse> => {
         const creationDate = new Date();
-        const expirationDate = new Date(creationDate.getDate() + EXPIRATION_DELTA_DAYS);
+        const expirationDate = new Date(creationDate)
+        expirationDate.setDate(creationDate.getDate() + EXPIRATION_DELTA_DAYS);
         const paymentAttributes: PaymentAttributes = {
             id: uuidv4(),
-            magnetic_link: magneticLink,
-            value_to_freeze: valueToFreeze,
-            created_at: creationDate.toDateString(),
-            expiration_date: expirationDate.toDateString()
+            torrent_attributes: {
+                data_id: magneticLink,
+                value_to_freeze: valueToFreeze,
+                created_at: creationDate.toDateString(),
+                expiration_date: expirationDate.toDateString()
+            }
         }
-        const stringfiedObject: string = JSON.stringify(paymentAttributes)
-        return this.invokeTransaction('createPaymentIntention', [stringfiedObject]);
+        const stringfiedObject: string = JSON.stringify(paymentAttributes.torrent_attributes)
+        return this.invokeTransaction('createPaymentIntention', [paymentAttributes.id, stringfiedObject]);
     }
     
     public invokeReadPaymentIntention = async (downloadIntentionId: string): Promise<PaymentIntentionResponse> => {
