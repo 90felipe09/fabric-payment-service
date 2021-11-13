@@ -14,4 +14,4 @@ export const PAYFLUXO_USING_PORT = PAYFLUXO_LISTENING_PORT;
 
 // With blockchain
 // export const PAYMENT_SERVICE: PaymentServiceInterface = new HyperledgerPaymentService();
-export const PAYMENT_SERVICE: PaymentServiceInterface = new PlanocPaymentService();
+export const PAYMENT_SERVICE: PaymentServiceInterface = new HyperledgerPaymentService();

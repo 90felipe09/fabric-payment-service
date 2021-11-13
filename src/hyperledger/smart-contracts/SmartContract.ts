@@ -24,22 +24,20 @@ export class SmartContract {
         }
     };
 
-    protected invokeTransaction = async (transactionName: string, args: any[]): Promise<any> => {
+    protected invokeTransaction = async (name: string, args: any[]): Promise<any> => {
         try {
-            console.log(`[INFO] Perform transaction invoke ${transactionName}(${args})`)
-            const name = `${this.smartContractName}:${transactionName}`;
-            return this.contract.submitTransaction(name, ...args);
+            console.log(`[INFO] Perform transaction invoke ${name}(${args})`)
+            return JSON.parse((await this.contract.submitTransaction(name, ...args)).toString());
         } catch (error) {
             console.log(`[ERROR] Smart Contract error: ${error}`)
             throw error
         }
     }
 
-    protected evaluateTransaction = async (transactionName: string, args: any[]): Promise<any> => {
+    protected evaluateTransaction = async (name: string, args: any[]): Promise<any> => {
         try {
-            const name = `${this.smartContractName}:${transactionName}`;
             console.log(`[INFO] Perform transaction evaluation ${name}(${args})`)
-            return await this.contract.evaluateTransaction(name, ...args);
+            return await JSON.parse((await this.contract.evaluateTransaction(name, ...args)).toString());
         } catch (error) {
             console.log(`[ERROR] Smart Contract error: ${error}`)
             throw error
