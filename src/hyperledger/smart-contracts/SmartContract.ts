@@ -37,7 +37,8 @@ export class SmartContract {
     protected evaluateTransaction = async (name: string, args: any[]): Promise<any> => {
         try {
             console.log(`[INFO] Perform transaction evaluation ${name}(${args})`)
-            return await JSON.parse((await this.contract.evaluateTransaction(name, ...args)).toString());
+            const stringfiedResponse = (await this.contract.evaluateTransaction(name, ...args)).toString()
+            return await JSON.parse(stringfiedResponse);
         } catch (error) {
             console.log(`[ERROR] Smart Contract error: ${error}`)
             throw error
