@@ -35,7 +35,7 @@ export class HyperledgerPaymentService implements PaymentServiceInterface {
     }
 
     public queryGetPiecePrice = async (): Promise<number> => {
-        return this.queryGetPiecePrice();
+        return await this.paymentIntentionContract.queryGetPiecePrice();
     }
 
     public invokeRedeem = async (redeemArguments: RedeemArguments): Promise<void> => {

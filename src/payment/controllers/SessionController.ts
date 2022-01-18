@@ -283,7 +283,3 @@ export class SessionController {
         return false;
     }
 }
-
-function getAddressthis(loadedUserCertificate: any): string {
-    throw new Error("Function not implemented.");
-}
