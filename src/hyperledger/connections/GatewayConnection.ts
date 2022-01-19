@@ -1,9 +1,11 @@
+import axios from 'axios';
 import { Contract, Gateway, GatewayOptions, Network, Wallet, Wallets, X509Identity } from 'fabric-network';
 import { getAddress } from '../../payment/utils/userAddress';
 import { IAuthenticatedMessageData } from '../../torrente/messages/models/AuthenticatedMessage';
-import { CHAINCODE_ID, PAYMENT_CHANNEL } from '../config';
+import { CHAINCODE_ID, HYPERLEDGER_CONNECTION_PROFILE, PAYMENT_CHANNEL } from '../config';
+import { connectionProfileAdapter } from '../utils/ConnectionProfileAdapter';
 
-var jsonfile = require('../connectionProfile.json');
+
 export class GatewayConnection {
     private clientIdentity: X509Identity;
 
@@ -31,7 +33,8 @@ export class GatewayConnection {
                     asLocalhost: false                    
                 }
             };
-            const connectionProfile = jsonfile;
+            const connectionProfileReq = await (axios.get(HYPERLEDGER_CONNECTION_PROFILE));
+            const connectionProfile = connectionProfileAdapter(connectionProfileReq.data)
             const gateway = new Gateway();
             await gateway.connect(connectionProfile, gatewayOptions);
             this.peerGateway = gateway;
