@@ -3,8 +3,8 @@ import sha256 from 'crypto-js/sha256';
 import { getAddress } from '../utils/userAddress';
 
 export const ALGORITHM = "SHA256";
-const SIGNATURE_ALGORITHM = "ECDSA";
-const HASHING_ALG_NAME = "SHA-256";
+export const SIGNATURE_ALGORITHM = "ECDSA";
+export const HASHING_ALG_NAME = "SHA-256";
 export const SIGNATURE_FORMAT = "hex";
 
 export type CommitmentMessage = {
