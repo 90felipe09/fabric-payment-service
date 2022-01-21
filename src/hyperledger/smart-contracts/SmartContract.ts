@@ -20,7 +20,7 @@ export class SmartContract {
             console.log(`[INFO] Contract reference obtained: ${this.contract.chaincodeId}`)
         }
         catch (error){
-            console.log(`[ERROR] Couldn't feetch contract reference: ${error}`)
+            console.log(`[ERROR] Couldn't fetch contract reference: ${error}`)
         }
     };
 

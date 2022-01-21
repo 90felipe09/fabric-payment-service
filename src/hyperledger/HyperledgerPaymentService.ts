@@ -14,9 +14,9 @@ export class HyperledgerPaymentService implements PaymentServiceInterface {
         this.paymentIntentionContract = new PaymentIntentionContract(authData);
         this.accountContract = new AccountContract(authData);
 
-        this.redeemContract.init();
-        this.paymentIntentionContract.init();
-        this.accountContract.init();
+        await this.redeemContract.init();
+        await this.paymentIntentionContract.init();
+        await this.accountContract.init();
     }
 
     public evaluateAccount = async (accountId: string): Promise<AccountType> => {
@@ -35,7 +35,7 @@ export class HyperledgerPaymentService implements PaymentServiceInterface {
     }
 
     public queryGetPiecePrice = async (): Promise<number> => {
-        return await this.paymentIntentionContract.queryGetPiecePrice();
+        return this.paymentIntentionContract.queryGetPiecePrice();
     }
 
     public invokeRedeem = async (redeemArguments: RedeemArguments): Promise<void> => {
