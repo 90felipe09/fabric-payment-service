@@ -1,8 +1,5 @@
-import { Socket } from 'dgram';
 import express from 'express';
 import http from 'http';
-import WebSocket from 'ws';
-import { TORRENTE_NOTIFICATION_PORT } from '../../config';
 import { UserIdentification } from '../../payment/models/UserIdentification';
 import { ConnectionController } from '../ConnectionController';
 import { IDownloadIntentionMessageData } from '../messages/models/DownloadIntentionMessage';

@@ -1,12 +1,11 @@
-import { assert } from 'console';
-import WebSocket from 'ws'
+import WebSocket from 'ws';
 import { TORRENTE_NOTIFICATION_PORT } from '../../config';
 import { UserIdentification } from '../../payment/models/UserIdentification';
-import { AuthenticatedMessage, IAuthenticatedMessageData } from '../messages/models/AuthenticatedMessage';
+import { IAuthenticatedMessageData } from '../messages/models/AuthenticatedMessage';
 import { IClosingMessageData } from '../messages/models/ClosingMessage';
 import { IDownloadedBlockMessageData } from '../messages/models/DownloadedBlockMessage';
 import { IDownloadIntentionMessageData } from '../messages/models/DownloadIntentionMessage';
-import { ILogoutMessageData, LogoutMessage } from '../messages/models/LogoutMessage';
+import { ILogoutMessageData } from '../messages/models/LogoutMessage';
 import { IMessagesModel, MessagesTypesEnum } from '../messages/models/MessageModel';
 import { IRedeemValuesMessageData } from '../messages/models/RedeemValuesMessage';
 import { IRefreshWalletMessageData } from '../messages/models/RefreshWalletMessage';
