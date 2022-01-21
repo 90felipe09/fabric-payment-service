@@ -2,13 +2,14 @@ import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
 import { payfluxoLogo } from './payfluxoLogo';
+import { payfluxoMessagesHandler } from './payment/rules/TorrenteMessagesHandler';
 import { ConnectionController } from './torrente/ConnectionController';
 
 const app = express();
 const server = http.createServer(app);
 var con = new ConnectionController;
 
-con.openConnection().then( (connection:WebSocket) => {
+con.openConnection(payfluxoMessagesHandler).then( (_connection:WebSocket) => {
   console.log("resolved");
 }).catch( (error) => {
     console.log("Rejected:", error)

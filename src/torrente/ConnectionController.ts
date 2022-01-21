@@ -3,19 +3,20 @@ import http from 'http';
 import WebSocket from 'ws';
 import { TORRENTE_NOTIFICATION_PORT } from '../config';
 import { MessagesHandler } from './messages/MessagesHandler';
+import { MessagesHandlersMap } from './messages/models/MessagesHandlersMap';
 import { NotificationHandler } from './notification/NotificationHandler';
 
 export class ConnectionController {
-    torrenteConnection: WebSocket;
-    notificationHandler: NotificationHandler;
-    messagesHandler: MessagesHandler;
+    private static torrenteConnection: WebSocket;
 
-    public getConnection(){
-        console.log(this.torrenteConnection);
-        return this.torrenteConnection;
+    public static getConnection = (): WebSocket => {
+        if (!ConnectionController.torrenteConnection){
+            throw Error("Connection with torrent not initialized yet")
+        }
+        return ConnectionController.torrenteConnection;
     }
 
-    openConnection(){ 
+    openConnection(messagesHandler: MessagesHandlersMap){ 
         const app = express();
         const server = http.createServer(app);
         const wss = new WebSocket.Server({ clientTracking: true, server});
@@ -26,11 +27,11 @@ export class ConnectionController {
                     console.log(`[INFO] Notification port open on: ${TORRENTE_NOTIFICATION_PORT}`);
                 });
                 wss.on('connection', (ws: WebSocket) => {
-                    this.handleConnection(ws);
+                    this.handleConnection(ws, messagesHandler);
 
                     ws.on("close", this.handleDisconnection);
 
-                    ws.on("message", this.messagesHandler.handleMessage)
+                    ws.on("message", MessagesHandler.getInstance().handleMessage)
                 });
 
                 resolve("success");
@@ -43,12 +44,12 @@ export class ConnectionController {
         });
     }
 
-    handleConnection(ws: WebSocket) {
-        this.torrenteConnection = ws;
-        this.notificationHandler = new NotificationHandler(ws);
-        this.messagesHandler = new MessagesHandler(ws, this.notificationHandler);
+    handleConnection(ws: WebSocket, messagesHandler: MessagesHandlersMap) {
+        ConnectionController.torrenteConnection = ws;
+        new NotificationHandler();
+        new MessagesHandler(messagesHandler);
         console.log("[INFO] connected to Torrente");
-        this.notificationHandler.notifyConnection();
+        NotificationHandler.getInstance().notifyConnection();
     }
 
     handleDisconnection() {

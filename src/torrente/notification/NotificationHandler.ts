@@ -1,6 +1,6 @@
-import WebSocket from "ws";
-import { PAYFLUXO_LISTENING_PORT, PAYFLUXO_EXTERNAL_PORT } from "../../config";
+import { PAYFLUXO_EXTERNAL_PORT, PAYFLUXO_LISTENING_PORT } from "../../config";
 import { TorrenteWallet } from "../../payment/models/TorrenteWallet";
+import { ConnectionController } from "../ConnectionController";
 import { ConnectionNotification } from "./models/ConnectionNotification";
 import { IntentionDeclaredNotification } from "./models/IntentionDeclaredNotification";
 import { NATNotification } from "./models/NATNotification";
@@ -13,53 +13,58 @@ export enum DownloadDeclarationIntentionStatusEnum {
 }
 
 export class NotificationHandler {
-    torrenteConnection: WebSocket
+    private static instance: NotificationHandler;
 
-    constructor(ws: WebSocket){
-        this.torrenteConnection = ws;
+    public static getInstance = (): NotificationHandler => {
+        if (!NotificationHandler.instance) {
+            throw Error("NotificationHandler not initialized yet");
+        }
+        return NotificationHandler.instance;
     }
 
-    notifyDownloadDeclarationIntentionStatus(torrentId: string, status: DownloadDeclarationIntentionStatusEnum) {
+    constructor(){
+        NotificationHandler.instance = this;
+    }
+
+    public notifyDownloadDeclarationIntentionStatus(torrentId: string, status: DownloadDeclarationIntentionStatusEnum) {
         const notificationObject = new IntentionDeclaredNotification({
             status: status,
             torrentId: torrentId
         })
 
-        console.log({notificationObject});
-        
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());
-        this.torrenteConnection.send(jsonNotification);
+        ConnectionController.getConnection().send(jsonNotification);
     }
 
-    notifyNATIssue() {
+    public notifyNATIssue() {
         const notificationObject = new NATNotification({
             message: `Couldn't open port on NAT. Please, map internal port ${PAYFLUXO_LISTENING_PORT} to external port ${PAYFLUXO_EXTERNAL_PORT}`
         });
 
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());        
-        this.torrenteConnection.send(jsonNotification);
+        ConnectionController.getConnection().send(jsonNotification);
     }
 
-    notifyConnection() {
+    public notifyConnection() {
         const notificationObject = new ConnectionNotification({
             status: "connected"
         });
 
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());          
-        this.torrenteConnection.send(jsonNotification);
+        ConnectionController.getConnection().send(jsonNotification);
     }
 
-    notifyPayment(paymentNotificationData: IPaymentNotifyData){
+    public notifyPayment(paymentNotificationData: IPaymentNotifyData){
         const notificationObject = new PaymentNotification(paymentNotificationData);
 
         const jsonNotification = JSON.stringify(notificationObject.getNotificationObject());           
-        this.torrenteConnection.send(jsonNotification);
+        ConnectionController.getConnection().send(jsonNotification);
     }
 
-    notifyWalletRefresh(newWallet: TorrenteWallet){
+    public notifyWalletRefresh(newWallet: TorrenteWallet){
         const walletObject = new WalletRefreshNotification({wallet: newWallet});
 
         const jsonNotification = JSON.stringify(walletObject.getNotificationObject());           
-        this.torrenteConnection.send(jsonNotification);
+        ConnectionController.getConnection().send(jsonNotification);
     }
 }
