@@ -15,14 +15,15 @@ describe("test SessionController class", () => {
     const hyperledgerPaymentService = new HyperledgerPaymentService()
 
     beforeEach(async (done) => {
-        await hyperledgerPaymentService.init(identificationExample)
+        await hyperledgerPaymentService.init(identificationExample);
+        await hyperledgerPaymentService.waitTillInitialized();
         done();
     })
 
-    afterEach(async (done) => {
-        delete hyperledgerPaymentService.accountContract
-        delete hyperledgerPaymentService.redeemContract;
-        delete hyperledgerPaymentService.paymentIntentionContract
+    afterEach((done) => {
+        hyperledgerPaymentService.accountContract.close()
+        hyperledgerPaymentService.redeemContract.close();
+        hyperledgerPaymentService.paymentIntentionContract.close();
         done();
     })
 
@@ -42,5 +43,5 @@ describe("test SessionController class", () => {
         console.log(newAccountData);
         assert(parseFloat(newAccountData.balance) < parseFloat(newAccountData.balance))
         done();
-    }, 30000);
+    });
 });

@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
 import { payfluxoLogo } from './payfluxoLogo';
-import { payfluxoMessagesHandler } from './payment/rules/TorrenteMessagesHandler';
+import { payfluxoMessagesHandler } from './payment/handlers/TorrenteMessagesHandler';
 import { ConnectionController } from './torrente/ConnectionController';
 
 const app = express();

@@ -13,6 +13,10 @@ export class SmartContract {
         this.smartContractName = smartContractName;
     }
 
+    public close = () => {
+        this.gatewayConnection.peerGateway.disconnect();
+    }
+
     public init = async () => {
         try{
             console.log(`[INFO] Fetching chaincode reference for ${this.smartContractName}`)

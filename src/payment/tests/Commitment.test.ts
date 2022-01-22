@@ -1,6 +1,6 @@
-import crypto from 'crypto';
 import sha256 from 'crypto-js/sha256';
-import { ALGORITHM, Commitment, CommitmentContent, CommitmentMessage, HASHING_ALG_NAME, SIGNATURE_ALGORITHM, SIGNATURE_FORMAT } from "../models/Commitment";
+import { CommitmentContent, CommitmentMessage } from '../../p2p/models/CommitmentMessage';
+import { Commitment, HASHING_ALG_NAME, SIGNATURE_ALGORITHM } from "../models/Commitment";
 import { HashChain } from "../models/HashChain";
 
 describe("test Commitment class", () => {

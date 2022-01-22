@@ -1,5 +1,5 @@
 import { Contract } from "fabric-network";
-import { CommitmentMessage } from "../../payment/models/Commitment";
+import { CommitmentMessage } from "../../p2p/models/CommitmentMessage";
 import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
 import { REDEEM_CONTRACT } from "../config";
 import { SmartContract } from "./SmartContract";
