@@ -93,11 +93,11 @@ export class TorrenteInterfaceSimulator {
         this.torrenteSocket.send(authString);
     }
 
-    public downloadBlock = (uploaderIp: string) => {
+    public downloadBlock = (uploaderIp: string, magneticLink: string, fileSize: number) => {
         const downloadBlockData: IMessagesModel<IDownloadedBlockMessageData> = {
             data: {
-                fileSize: 15,
-                magneticLink: "testdownload",
+                fileSize: fileSize,
+                magneticLink: magneticLink,
                 uploaderIp: uploaderIp
             },
             type: MessagesTypesEnum.DownloadedBlock

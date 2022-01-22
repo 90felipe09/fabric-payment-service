@@ -31,7 +31,7 @@ describe("test ConnectionController class", () => {
         torrentId: "TorrentTestId"
     }
 
-    var torrenteSimulator;
+    var torrenteSimulator: TorrenteInterfaceSimulator;
 
     beforeEach((done) => {
         torrenteSimulator = new TorrenteInterfaceSimulator()
@@ -47,7 +47,7 @@ describe("test ConnectionController class", () => {
     
     it("should test MessagesHandler class.", async () => {
         torrenteSimulator.authenticate(identificationExample)
-        torrenteSimulator.downloadBlock('127.0.0.1');
+        torrenteSimulator.downloadBlock('127.0.0.1', 'magneticLinkTest', 15);
         torrenteSimulator.close();
         torrenteSimulator.downloadIntention(downloadDataExample);
         torrenteSimulator.logout();
