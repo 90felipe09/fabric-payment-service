@@ -1,14 +1,15 @@
+import WebSocket from "ws";
 import { SessionController } from "../../payment/controllers/SessionController";
+import { CommitmentReceivementWaiter } from "../../payment/rules/CommitmentReceivementProtocol";
 import { CertificateRequest } from "../models/CertificateRequest";
-import { MicropaymentRequest } from "../models/MicropaymentRequest";
 import { CertificateResponse } from "../models/CertificateResponse";
+import { CommitmentMessage } from "../models/CommitmentMessage";
 import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PayfluxoInterface } from "../models/ConnectionResources";
+import { MicropaymentRequest } from "../models/MicropaymentRequest";
 import { IPayfluxoRequestModel, PayfluxoRequestsTypesEnum } from "../models/PayfluxoRequestModel";
 import { getConnectionHash } from "../util/peerHash";
 import { ConnectionNotifier } from "./ConnectionNotifier";
-import WebSocket from "ws";
-import { CommitmentMessage } from "../models/CommitmentMessage";
 
 export class ConnectionResource implements PayfluxoInterface {
     public ws: WebSocket;
@@ -31,7 +32,13 @@ export class ConnectionResource implements PayfluxoInterface {
         const requestObject: IPayfluxoRequestModel<any> = JSON.parse(data.toString())
         const requestType: string = requestObject.type;
         console.log(`[INFO] Type: ${requestType}`)
-        this.notifier.addMessageToQueue(requestObject);
+        switch (requestType){
+            case PayfluxoRequestsTypesEnum.CommitmentMessage:
+                const commitmentReceivementProtocol = new CommitmentReceivementWaiter(this);
+                this.notifier.attach(commitmentReceivementProtocol);
+                break;
+        }
+        this.notifier.updateMessage(requestObject);
     }
 
     public requestCertificate = () => {
