@@ -1,115 +1,122 @@
-import axios from "axios";
-import http from 'http';
-import { PAYFLUXO_USING_PORT, PAYMENT_SERVICE } from "../../config";
+import WebSocket from 'ws';
+import { PAYMENT_SERVICE } from "../../config";
+import { PayfluxoServer } from "../../p2p/connections/PayfluxoServer";
+import { ConnectionResource } from '../../p2p/controllers/ConnectionResource';
+import { ConnectionsMap } from "../../p2p/controllers/ConnectionsMap";
+import { CommitmentMessage } from '../../p2p/models/CommitmentMessage';
+import { getPeerHash } from "../../p2p/util/peerHash";
 import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
-import { IDownloadIntentionMessageData } from "../../torrente/messages/models/DownloadIntentionMessage";
-import { Commitment, CommitmentMessage } from "../models/Commitment";
-import { SuccesfulCommitResponse, WrongCommitmentResponse } from "../models/CommitResponse";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
-import { MicropaymentRequest } from "../models/MicropaymentRequest";
-import { CommitmentNotFoundResponse, PaymentHandleReturn, SuccesfulPaymentResponse, WrongPaymentResponse } from "../models/PaymentResponse";
-import { CreatePaymentIntentionArguments, PaymentIntentionResponse, PaymentServiceInterface, RedeemArguments } from "../models/PaymentServiceInterface";
-import { TorrenteWallet } from "../models/TorrenteWallet";
-import { getPeerHash } from "../utils/peerHash";
-import { getAddress } from "../utils/userAddress";
+import { PaymentServiceInterface } from "../models/PaymentServiceInterface";
+import { UserIdentification } from "../models/UserIdentification";
 import { PaymentHandler } from "./PaymentHandler";
 import { ReceiverHandler } from "./ReceiverHandler";
 
 export type DownloadDeclarationIntentionsMap = {
     [magneticLink: string]: string,
 }
+
+export type HashCorrespondenceMap = {
+    [peerHash: string]: string
+}
+
+
 export class SessionController {
     loadedUserKey: string;
     loadedUserCertificate: string;
     loadedUserMSP: string;
     receivingListeners: ReceiverHashMap;
     paymentHandlers: PaymentHashMap;
+    peerConnectionCorrespondenceMap: HashCorrespondenceMap;
 
-    payfluxoServer: http.Server;
+    payfluxoServer: WebSocket.Server;
 
     downloadDeclarationIntentions: DownloadDeclarationIntentionsMap;
 
     paymentService: PaymentServiceInterface;
 
-    public constructor (userPrivateKey: string, userCertificate: string, userMSP: string, payfluxoServer: http.Server){
-        this.loadedUserKey = userPrivateKey;
-        this.loadedUserCertificate = userCertificate;
-        this.loadedUserMSP = userMSP;
-        this.receivingListeners = {};
-        this.paymentHandlers = {};
+    connectionsMap: ConnectionsMap;
 
-        this.payfluxoServer = payfluxoServer;
+    private static initializationResolver: (value?: unknown) => void = () => {};
+    private static endResolver: (value?: unknown) => void = () => {};
 
-        const authData: IAuthenticatedMessageData = {
-            certificate: userCertificate,
-            mspId: userMSP,
-            privateKey: userPrivateKey
+    private static instance: SessionController;
+
+    public static getInstance = (): SessionController => {
+        if (!SessionController.instance) {
+            throw Error("SessionController has not been initialized.");
         }
 
-        this.paymentService = PAYMENT_SERVICE
+        return SessionController.instance
+    }
 
+    public static destroyInstance = () => {
+        SessionController.endResolver();
+        SessionController.instance = undefined;
+    }
+
+    public constructor (userId: UserIdentification){
+        SessionController.instance = this;
+
+        this.loadedUserKey = userId.privateKey;
+        this.loadedUserCertificate = userId.certificate;
+        this.loadedUserMSP = userId.orgMSPID;
+
+        this.receivingListeners = {};
+        this.paymentHandlers = {};
+        this.connectionsMap = new ConnectionsMap();
+
+        const authData: IAuthenticatedMessageData = {
+            certificate: userId.certificate,
+            mspId: userId.orgMSPID,
+            privateKey: userId.privateKey
+        }
+
+        this.paymentService = PAYMENT_SERVICE;
         this.paymentService.init(authData);
 
         this.downloadDeclarationIntentions = {};
+        this.peerConnectionCorrespondenceMap = {};
+
+        SessionController.initializationResolver();
     }
 
-    public getWallet = async (): Promise<TorrenteWallet> => {
-        const accountId: string = getAddress(this.loadedUserCertificate);
-        const account = await this.paymentService.evaluateAccount(accountId);
-        const availableFunds: number = parseFloat(account.balance);
-        const reedemableValues: number = await this.getReedemableValues();
-        const frozenValues: number = await this.getFrozenValues();
-        return {
-            available: availableFunds,
-            frozen: frozenValues,
-            redeemable: reedemableValues
-        }
-    }
-
-    private getFrozenValues = async (): Promise<number> => {
-        try{
-            const paymentIntentionsPromises: Promise<PaymentIntentionResponse>[] = Object.values(
-                this.downloadDeclarationIntentions).map(downloadIntentionId => {
-                    return this.paymentService.invokeReadPaymentIntention(downloadIntentionId);
+    public static waitTillInitialized = async(): Promise<void> => {
+        if (!!SessionController.instance){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
             })
-            const paymentIntentions = await Promise.all(paymentIntentionsPromises);
-            const frozenValues: number = paymentIntentions.reduce((acc, paymentIntention) => {
-                acc += paymentIntention.available_funds;
-                return acc;
-            }, 0);
-            return frozenValues;
         }
-        catch {
-            throw (Error("[ERROR] Couldn't fetch payment intentions."))
+        else{
+            const initializationPromise = new Promise((resolve: (value: void) => void, _reject) => {
+                SessionController.initializationResolver = resolve;
+            })
+            return initializationPromise;
         }
     }
 
-    private getReedemableValues = async (): Promise<number> => {
-        try{
-            const reedemableHashesNumber: number = Object.values(this.receivingListeners).reduce((acc, receiverListener) => {
-                acc += (receiverListener.lastHashIndex - receiverListener.lastHashRedeemedIndex);
-                return acc;
-            }, 0);
-            const piecePrice = await this.paymentService.queryGetPiecePrice();
-            return reedemableHashesNumber * piecePrice;
+    public static waitTillClosed = async(): Promise<void> => {
+        if (!SessionController.instance){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
+            })
         }
-        catch{
-            throw (Error("[ERROR] Couldn't fetch piece price."))
+        else{
+            const endPromise = new Promise((resolve: (value: void) => void, _reject) => {
+                SessionController.endResolver = resolve;
+            })
+            return endPromise;
         }
     }
 
-    public declareNewPaymentIntention = async (data: IDownloadIntentionMessageData ) => {
-        const piecePrice = await this.paymentService.queryGetPiecePrice();
-        const paymentIntentionArgs: CreatePaymentIntentionArguments = {
-            magneticLink: data.magneticLink,
-            valueToFreeze: data.piecesNumber * piecePrice
-        }
-        const paymentIntention = await this.paymentService.invokeCreatePaymentIntention(paymentIntentionArgs);
-        if (paymentIntention.id) {
-            this.downloadDeclarationIntentions[data.magneticLink] = paymentIntention.id;
-        }
+    public addPeerCorrespondence = (peerHash: string, connectionHash: string) => {
+        this.peerConnectionCorrespondenceMap[peerHash] = connectionHash;
+    }
 
-        return paymentIntention;
+    public getConnectionFromPeerHash = (peerHash: string): ConnectionResource => {
+        const connectionHash = this.peerConnectionCorrespondenceMap[peerHash];
+        const connectionMap = PayfluxoServer.getInstance().getConnectionsMap();
+        return connectionMap.getConnection(connectionHash);
     }
 
     public closeServer = () => {
@@ -119,82 +126,15 @@ export class SessionController {
         this.loadedUserMSP = "";
         this.receivingListeners = {};
         this.paymentHandlers = {};
-        this.payfluxoServer.close();
-    }
-
-    public handleReceive(micropaymentRequest: MicropaymentRequest, requesterIp: string): PaymentHandleReturn<any>{
-        const payerHash = getPeerHash(requesterIp, micropaymentRequest.magneticLink);
-
-        const receiverListener = this.receivingListeners[payerHash];
-        if (receiverListener){
-            if (receiverListener.lastHashIndex >= micropaymentRequest.hashLinkIndex){
-                return {
-                    payerResponse: SuccesfulPaymentResponse,
-                    torrenteNotification: null
-                }
-            }
-            if (receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
-                // receiverListener.redeemTimer.resetTimer();
-                return {
-                      payerResponse: SuccesfulPaymentResponse,
-                      torrenteNotification: {
-                        blocksPaid: receiverListener.lastHashIndex,
-                        magneticLink: micropaymentRequest.magneticLink,
-                        payerIp: requesterIp
-                    }
-                }
-            }
-            return {
-                payerResponse: WrongPaymentResponse,
-                torrenteNotification: null
-            }
-        }
-        return {
-            payerResponse: CommitmentNotFoundResponse,
-            torrenteNotification: null
-        };
-    }
-
-    public async handleCommit(commitmentMessage: CommitmentMessage, requesterIp: string){
-        const peerEndpoint = `http://${requesterIp}:${PAYFLUXO_USING_PORT}/certificate`;
-        const keyResponse = await axios.get(peerEndpoint)
-        const certificate = keyResponse.data['certificate']
-
-        const commitmentIsValid = Commitment.validateSignature(commitmentMessage, certificate)
-        
-        const isIntentionValid = this.isIntentionValid(commitmentMessage.data.payment_intention_id)
-
-        if (commitmentIsValid && isIntentionValid){
-            this.addReceivingListener(
-                requesterIp,
-                certificate,
-                commitmentMessage
-            )
-            return SuccesfulCommitResponse;
-        }
-        else{
-            return WrongCommitmentResponse;
-        }
-    }
-
-    public handleRedeemValues = async (receiverListener: ReceiverHandler) => {
-        const redeemArguments: RedeemArguments = {
-            commitment: receiverListener.commitment,
-            hashLink: receiverListener.lastHash,
-            hashLinkIndex: receiverListener.lastHashIndex
-        }
-        await this.paymentService.invokeRedeem(redeemArguments);
-        receiverListener.updateRedeemableValues(redeemArguments.hashLink, redeemArguments.hashLinkIndex);
-        // receiverListener.redeemTimer.stopTimer();
+        PayfluxoServer.closeServer();
+        SessionController.destroyInstance();
     }
 
     public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentMessage){
         const newReceiverListener = new ReceiverHandler(
             payerIp, 
             payerPublicKey,
-            commitment,
-            this.handleRedeemValues
-            );
+            commitment);
         const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
 
@@ -213,9 +153,7 @@ export class SessionController {
         const newReceiverListener = new ReceiverHandler(
             payerIp, 
             payerPublicKey,
-            commitment,
-            this.handleRedeemValues
-            );
+            commitment);
         const magneticLink = commitment.data.data_id
         const receiverHash = getPeerHash(payerIp, magneticLink);
 
@@ -228,9 +166,8 @@ export class SessionController {
         this.receivingListeners[receiverHash] = newReceiverListener;
     }
 
-    public addpaymentHandlers(
-        receiverIp: string, 
-        receiverPublicKey: string, 
+    public addPaymentHandlers(
+        receiverIp: string,
         numberOfBlocks: number,
         magneticLink: string,
         downloadIntentionId: string
@@ -238,12 +175,9 @@ export class SessionController {
         const newPaymentController = new PaymentHandler()
     
         newPaymentController.initPaymentHandler(
-            receiverIp, 
-            receiverPublicKey, 
+            receiverIp,
             numberOfBlocks,
-            this.loadedUserKey,
             magneticLink,
-            this.loadedUserCertificate,
             downloadIntentionId)
 
         const receiverHash = getPeerHash(receiverIp, magneticLink);
@@ -272,14 +206,5 @@ export class SessionController {
         downloadIntentions: DownloadDeclarationIntentionsMap
     ) {
         this.downloadDeclarationIntentions = downloadIntentions;
-    }
-
-    public isIntentionValid = async (intentionId: string) => {
-        if (intentionId) {
-            const declarationReference = await this.paymentService.invokeReadPaymentIntention(intentionId);
-            const isNotExpired = new Date(Date.parse(declarationReference.expiration_date)) > new Date();
-            return isNotExpired;
-        }
-        return false;
     }
 }

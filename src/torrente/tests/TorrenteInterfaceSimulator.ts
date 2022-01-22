@@ -13,6 +13,8 @@ import { IRefreshWalletMessageData } from '../messages/models/RefreshWalletMessa
 export class TorrenteInterfaceSimulator {
     torrenteSocket: WebSocket
 
+    private endResolver: (value?: unknown) => void = () => {};
+
     public constructor() { 
         this.initConnection();
         this.torrenteSocket.onopen = this.onOpen;
@@ -114,10 +116,44 @@ export class TorrenteInterfaceSimulator {
 
     private onClose = (event) => {
         console.log("Disconnected from Payfluxo")
+        this.torrenteSocket.close();
+        this.endResolver();
     }
 
     private onError = (event) => {
         console.log(event)
+    }
+
+    public waitUntilClose = async (): Promise<void> => {
+        if (!this.torrenteSocket){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
+            })
+        }
+        else{
+            const endPromise = new Promise((resolve: (value: void) => void, _reject) => {
+                this.endResolver = resolve;
+            })
+            return endPromise;
+        }
+    }
+
+    public waitUntilOpen = async(): Promise<void> => {
+        if (this.torrenteSocket.readyState === WebSocket.OPEN){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
+            })
+        }
+        else{
+            const conPromise = new Promise((resolve: (value: void) => void, _reject) => {
+                this.torrenteSocket.on("open", () => {
+                    return new Promise((_resolve, _reject) => {
+                        resolve(null);
+                    })
+                })
+            })
+            return conPromise;
+        }
     }
 }
 

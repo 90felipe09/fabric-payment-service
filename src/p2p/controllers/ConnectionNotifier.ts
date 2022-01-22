@@ -3,7 +3,7 @@ import { IPayfluxoRequestModel } from "../models/PayfluxoRequestModel";
 
 export class ConnectionNotifier implements Subject{
     private observers: Observer[];
-    private messagesQueue: IPayfluxoRequestModel<any>[]
+    private messageStored: IPayfluxoRequestModel<any>
 
     public constructor() {
         this.observers = []
@@ -24,10 +24,13 @@ export class ConnectionNotifier implements Subject{
         this.observers.forEach(observer => {
             observer.update(this)
         })
-        this.messagesQueue = [];
     }
 
-    public addMessageToQueue(message: IPayfluxoRequestModel<any>): void {
-        this.messagesQueue.push(message)
+    public updateMessage(message: IPayfluxoRequestModel<any>): void {
+        this.messageStored = message
+    }
+
+    public getMessage<T>(): IPayfluxoRequestModel<T> {
+        return this.messageStored
     }
 }

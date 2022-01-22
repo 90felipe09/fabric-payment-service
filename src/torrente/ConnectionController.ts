@@ -8,6 +8,7 @@ import { NotificationHandler } from './notification/NotificationHandler';
 
 export class ConnectionController {
     private static torrenteConnection: WebSocket;
+    private static connectionResolver: (value?: unknown) => void = () => {};
 
     public static getConnection = (): WebSocket => {
         if (!ConnectionController.torrenteConnection){
@@ -50,10 +51,42 @@ export class ConnectionController {
         new MessagesHandler(messagesHandler);
         console.log("[INFO] connected to Torrente");
         NotificationHandler.getInstance().notifyConnection();
+        ConnectionController.connectionResolver();
+    }
+
+    public static waitUntillConnection = async (): Promise<void> => {
+        if(!ConnectionController.torrenteConnection){
+            return new Promise((resolve, _reject) => {
+                ConnectionController.connectionResolver = resolve;
+            })
+        }
+        else if (ConnectionController.torrenteConnection.readyState === WebSocket.OPEN){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
+            })
+        }
+        return new Promise((resolve, _reject) => {
+            ConnectionController.torrenteConnection.on("open", () => {
+                resolve(null);
+            })
+        })
     }
 
     handleDisconnection() {
         console.log("[INFO] disconnected from Torrente");
+    }
+
+    public static waitUntillDisconnection = async (): Promise<void> => {
+        if (ConnectionController.torrenteConnection.readyState === WebSocket.CLOSED){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
+            })
+        }
+        return new Promise((resolve, _reject) => {
+            ConnectionController.torrenteConnection.on("close", () => {
+                resolve(null);
+            })
+        })
     }
 
 }

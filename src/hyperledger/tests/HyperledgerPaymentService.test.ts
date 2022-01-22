@@ -32,7 +32,7 @@ describe("test SessionController class", () => {
         const piecePrice = await hyperledgerPaymentService.queryGetPiecePrice();
         const paymentIntetion = await hyperledgerPaymentService.invokeCreatePaymentIntention({
             magneticLink: "MagneticLinkTest",
-            valueToFreeze: 12345
+            valueToFreeze: 2
         })
         const paymentIntentionRead = await hyperledgerPaymentService.invokeReadPaymentIntention(paymentIntetion.id);
         const newAccountData = await hyperledgerPaymentService.evaluateAccount(accountId);
