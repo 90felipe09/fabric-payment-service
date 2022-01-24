@@ -44,17 +44,25 @@ export class ReceiveMicropaymentWaiter implements Observer {
     private receiverListener: ReceiverHandler;
 
     update(subject: ConnectionNotifier): void {
-        const micropaymentRequest = subject.getMessage<MicropaymentRequest>().data;
-        if (this.receiverListener.lastHashIndex >= micropaymentRequest.hashLinkIndex){
-            // pagamento fora de ordem
-        }
-        else if (this.receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
-            const notificationHandler = NotificationHandler.getInstance();
-            notificationHandler.notifyPayment({
-                blocksPaid: micropaymentRequest.hashLinkIndex,
-                magneticLink: micropaymentRequest.magneticLink,
-                payerIp: this.connectionResource.ip
-            })
+        const message = subject.getMessage<MicropaymentRequest>();
+        if (message.type === PayfluxoRequestsTypesEnum.MicroPaymentRequest){
+            const micropaymentRequest = subject.getMessage<MicropaymentRequest>().data;
+            if (this.receiverListener.lastHashIndex >= micropaymentRequest.hashLinkIndex){
+                // pagamento fora de ordem
+                console.log(`[INFO] Received paymemnt out of order: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}.`)
+            }
+            else if (this.receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
+                console.log(`[INFO] Received valid payment: ${micropaymentRequest.hashLinkIndex}.`)
+                const notificationHandler = NotificationHandler.getInstance();
+                notificationHandler.notifyPayment({
+                    blocksPaid: micropaymentRequest.hashLinkIndex,
+                    magneticLink: micropaymentRequest.magneticLink,
+                    payerIp: this.connectionResource.ip
+                })
+            }
+            else{
+                console.log("[INFO] Invalid payment")
+            }
         }
     }
 

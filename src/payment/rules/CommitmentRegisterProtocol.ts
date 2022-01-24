@@ -54,23 +54,25 @@ class CertificateReceiverWaiter implements Observer {
     private downloadData: IDownloadedBlockMessageData;
 
     update(subject: ConnectionNotifier): void {
-        const certificateMessages = subject.getMessage<CertificateResponse>();
-        const peerHash = getPeerHash(this.downloadData.uploaderIp, this.downloadData.magneticLink);
-        const sessionController = SessionController.getInstance();
-        const paymentHandler = sessionController.paymentHandlers[peerHash]
-        paymentHandler.validatePaymentHandler(certificateMessages.data.certificate)
-        const commitment = paymentHandler.commitment.commitmentMessage;
-        const commitmentMessage: IPayfluxoRequestModel<CommitmentMessage> = {
-            data: commitment,
-            type: PayfluxoRequestsTypesEnum.CommitmentMessage
+        const message = subject.getMessage<CertificateResponse>();
+        if (message.type === PayfluxoRequestsTypesEnum.CertificateResponse){
+            const peerHash = getPeerHash(this.downloadData.uploaderIp, this.downloadData.magneticLink);
+            const sessionController = SessionController.getInstance();
+            const paymentHandler = sessionController.paymentHandlers[peerHash]
+            paymentHandler.validatePaymentHandler(message.data.certificate)
+            const commitment = paymentHandler.commitment.commitmentMessage;
+            const commitmentMessage: IPayfluxoRequestModel<CommitmentMessage> = {
+                data: commitment,
+                type: PayfluxoRequestsTypesEnum.CommitmentMessage
+            }
+            const commitmentString = JSON.stringify(commitmentMessage);
+            this.connectionResource.ws.send(commitmentString);
+            const commitmentAcceptanceWaiter = new CommitmentAcceptanceWaiter(
+                paymentHandler, this.connectionResource, this.downloadData
+            );
+            this.connectionResource.notifier.detach(this)
+            this.connectionResource.notifier.attach(commitmentAcceptanceWaiter);
         }
-        const commitmentString = JSON.stringify(commitmentMessage);
-        this.connectionResource.ws.send(commitmentString);
-        const commitmentAcceptanceWaiter = new CommitmentAcceptanceWaiter(
-            paymentHandler, this.connectionResource, this.downloadData
-        );
-        this.connectionResource.notifier.detach(this)
-        this.connectionResource.notifier.attach(commitmentAcceptanceWaiter);
     }
 
     constructor (connectionResource: ConnectionResource, downloadData: IDownloadedBlockMessageData) {
@@ -86,18 +88,20 @@ class CommitmentAcceptanceWaiter implements Observer {
 
     update(subject: ConnectionNotifier): void {
         const commitmentResponse = subject.getMessage<CommitResponseContent>();
-        switch (commitmentResponse.data.result){
-            case CommitmentResponseStatusEnum.Accepted:
-                const micropaymentProtocol = new MicroPaymentProtocol(this.paymentHandler, this.connection);
-                this.paymentHandler.activatePaymentProtocol(micropaymentProtocol);
-                micropaymentProtocol.activate();
-                break;
-            case CommitmentResponseStatusEnum.Denied:
-                const retryCommitmentProtocol = new CommitmentRegisterProtocol(this.downloadData);
-                retryCommitmentProtocol.activate();
-                break;
+        if (commitmentResponse.type === PayfluxoRequestsTypesEnum.CommitmentAcceptance){
+            switch (commitmentResponse.data.result){
+                case CommitmentResponseStatusEnum.Accepted:
+                    const micropaymentProtocol = new MicroPaymentProtocol(this.paymentHandler, this.connection);
+                    this.paymentHandler.activatePaymentProtocol(micropaymentProtocol);
+                    micropaymentProtocol.activate();
+                    break;
+                case CommitmentResponseStatusEnum.Denied:
+                    const retryCommitmentProtocol = new CommitmentRegisterProtocol(this.downloadData);
+                    retryCommitmentProtocol.activate();
+                    break;
+            }
+            this.connection.notifier.detach(this);
         }
-        this.connection.notifier.detach(this);
     }
 
     constructor (paymentHandler: PaymentHandler, connection: ConnectionResource, downloadData: IDownloadedBlockMessageData) {
