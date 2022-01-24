@@ -61,12 +61,7 @@ class CertificateReceiverWaiter implements Observer {
             const paymentHandler = sessionController.paymentHandlers[peerHash]
             paymentHandler.validatePaymentHandler(message.data.certificate)
             const commitment = paymentHandler.commitment.commitmentMessage;
-            const commitmentMessage: IPayfluxoRequestModel<CommitmentMessage> = {
-                data: commitment,
-                type: PayfluxoRequestsTypesEnum.CommitmentMessage
-            }
-            const commitmentString = JSON.stringify(commitmentMessage);
-            this.connectionResource.ws.send(commitmentString);
+            this.connectionResource.proposeCommitment(commitment);
             const commitmentAcceptanceWaiter = new CommitmentAcceptanceWaiter(
                 paymentHandler, this.connectionResource, this.downloadData
             );

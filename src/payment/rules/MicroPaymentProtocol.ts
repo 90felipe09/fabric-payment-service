@@ -24,12 +24,7 @@ export class MicroPaymentProtocol implements Protocol{
     }
 
     private sendMicroPayment = (message: MicropaymentRequest) => {
-        const paymentMessage: IPayfluxoRequestModel<MicropaymentRequest> = {
-            data: message,
-            type: PayfluxoRequestsTypesEnum.MicroPaymentRequest
-        }
-        const paymentMessageString = JSON.stringify(paymentMessage)
-        this.connection.ws.send(paymentMessageString);
+        this.connection.sendPayment(message.hashLink, message.hashLinkIndex, message.magneticLink)
         console.log(`[INFO] Paid for a block from torrent ${message.magneticLink} to ${this.connection.peerHash}`)
     }
 
