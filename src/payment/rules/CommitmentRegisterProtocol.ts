@@ -33,11 +33,13 @@ export class CommitmentRegisterProtocol implements Protocol {
         const payfluxoServer = PayfluxoServer.getInstance();
         const connectionsMap = payfluxoServer.getConnectionsMap();
         const wsUploader = new WebSocket(`ws://${validatedIp}:${PAYFLUXO_EXTERNAL_PORT}`)
-        connectionsMap.addConnection(connectionHash, wsUploader, this.downloadData.uploaderIp, PAYFLUXO_EXTERNAL_PORT)
-        const connection = connectionsMap.getConnection(connectionHash);
-        connection.requestCertificate();
-        const certificateReceiverWaiter = new CertificateReceiverWaiter(connection, this.downloadData);
-        connection.notifier.attach(certificateReceiverWaiter);
+        wsUploader.on('open', (ws: WebSocket) => {
+            connectionsMap.addConnection(connectionHash, wsUploader, this.downloadData.uploaderIp, PAYFLUXO_EXTERNAL_PORT)
+            const connection = connectionsMap.getConnection(connectionHash);
+            connection.requestCertificate();
+            const certificateReceiverWaiter = new CertificateReceiverWaiter(connection, this.downloadData);
+            connection.notifier.attach(certificateReceiverWaiter);
+        })
     }
 
     constructor(downloadData: IDownloadedBlockMessageData) {

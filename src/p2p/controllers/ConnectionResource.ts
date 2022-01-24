@@ -37,6 +37,9 @@ export class ConnectionResource implements PayfluxoInterface {
                 const commitmentReceivementProtocol = new CommitmentReceivementWaiter(this);
                 this.notifier.attach(commitmentReceivementProtocol);
                 break;
+            case PayfluxoRequestsTypesEnum.CertificateRequest:
+                this.respondCertificate();
+                break;
         }
         this.notifier.updateMessage(requestObject);
     }
