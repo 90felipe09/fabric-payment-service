@@ -4,8 +4,10 @@ import { PayfluxoServer } from "../../p2p/connections/PayfluxoServer";
 import { ConnectionNotifier } from "../../p2p/controllers/ConnectionNotifier";
 import { ConnectionResource } from "../../p2p/controllers/ConnectionResource";
 import { CertificateResponse } from "../../p2p/models/CertificateResponse";
+import { CommitmentMessage } from "../../p2p/models/CommitmentMessage";
 import { CommitmentResponseStatusEnum, CommitResponseContent } from "../../p2p/models/CommitResponse";
 import { Observer } from "../../p2p/models/ObserverPattern";
+import { IPayfluxoRequestModel, PayfluxoRequestsTypesEnum } from "../../p2p/models/PayfluxoRequestModel";
 import { getConnectionHash, getPeerHash } from "../../p2p/util/peerHash";
 import { IDownloadedBlockMessageData } from "../../torrente/messages/models/DownloadedBlockMessage";
 import { PaymentHandler } from "../controllers/PaymentHandler";
@@ -58,7 +60,11 @@ class CertificateReceiverWaiter implements Observer {
         const paymentHandler = sessionController.paymentHandlers[peerHash]
         paymentHandler.validatePaymentHandler(certificateMessages.data.certificate)
         const commitment = paymentHandler.commitment.commitmentMessage;
-        const commitmentString = JSON.stringify(commitment);
+        const commitmentMessage: IPayfluxoRequestModel<CommitmentMessage> = {
+            data: commitment,
+            type: PayfluxoRequestsTypesEnum.CommitmentMessage
+        }
+        const commitmentString = JSON.stringify(commitmentMessage);
         this.connectionResource.ws.send(commitmentString);
         const commitmentAcceptanceWaiter = new CommitmentAcceptanceWaiter(
             paymentHandler, this.connectionResource, this.downloadData
