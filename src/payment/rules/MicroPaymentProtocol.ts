@@ -48,7 +48,6 @@ export class ReceiveMicropaymentWaiter implements Observer {
         if (message.type === PayfluxoRequestsTypesEnum.MicroPaymentRequest){
             const micropaymentRequest = subject.getMessage<MicropaymentRequest>().data;
             if (this.receiverListener.lastHashIndex >= micropaymentRequest.hashLinkIndex){
-                // pagamento fora de ordem
                 console.log(`[INFO] Received paymemnt out of order: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}.`)
             }
             else if (this.receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
@@ -61,7 +60,7 @@ export class ReceiveMicropaymentWaiter implements Observer {
                 })
             }
             else{
-                console.log("[INFO] Invalid payment")
+                console.log(`[INFO] Invalid payment: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}`)
             }
         }
     }

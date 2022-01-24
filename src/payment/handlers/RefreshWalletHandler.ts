@@ -4,7 +4,6 @@ import { getWallet } from "../commands/GetWallet";
 
 
 export const handleRefreshWallet = async (_data?: IRefreshWalletMessageData) => {
-    console.log("[DEBUG] Wallet refresh notified");
     try{
         const accountWallet = await getWallet();
 

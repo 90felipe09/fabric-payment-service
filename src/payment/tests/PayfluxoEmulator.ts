@@ -44,11 +44,12 @@ const commandReaction = (value: string, torrenteEmulator: TorrenteInterfaceSimul
             break;
         case 'downloaded':
             const blocksDownloaded = parseInt(commandWords[1])
+            const fileSize = parseInt(commandWords[4])
             for (let index = 0; index < blocksDownloaded; index++) {
                 torrenteEmulator.downloadBlock(
                     commandWords[2],
                     commandWords[3],
-                    blocksDownloaded
+                    fileSize
                     )
             }
             break;

@@ -15,7 +15,6 @@ export const handleRedeemValues = async (_data?: IRedeemValuesMessageData) => {
         }
     });
     await Promise.all(redeemPromises);
-    console.log("[DEBUG] Redeem values requested");
 
     handleRefreshWallet();
 }

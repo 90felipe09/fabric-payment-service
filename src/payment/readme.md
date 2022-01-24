@@ -75,6 +75,6 @@ can do. Amongst them follows:
 - `close`:  will close the emulator
 - `logout`: will clean credentials and turn off Payfluxo server;
 - `intention <download size> <magnetic link>`: declare a download intention for a test download for the given magnetic link. Will freeze funds equal to the download size.
-- `downloaded <amount of blocks> <ip> <magnetic link>`: declare that downloaded a block from given ip, for the given magnetic link. With a amounts of blocks higher than 1 will send every one in a row. Good for load balance tests;
+- `downloaded <amount of blocks> <ip> <magnetic link> <file size>`: declare that downloaded a block from given ip, for the given magnetic link. With a amounts of blocks higher than 1 will send every one in a row. Good for load balance tests;
 - `redeem`: Asks to redeem all redeemable values that it can.
 - `refresh`: Asks for the new wallet data;
