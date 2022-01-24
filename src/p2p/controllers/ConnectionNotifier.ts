@@ -27,7 +27,8 @@ export class ConnectionNotifier implements Subject{
     }
 
     public updateMessage(message: IPayfluxoRequestModel<any>): void {
-        this.messageStored = message
+        this.messageStored = message;
+        this.notify();
     }
 
     public getMessage<T>(): IPayfluxoRequestModel<T> {
