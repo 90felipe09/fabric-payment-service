@@ -1,22 +1,62 @@
 import { AccountType, CreatePaymentIntentionArguments, PaymentIntentionResponse, PaymentServiceInterface, RedeemArguments } from "../payment/models/PaymentServiceInterface";
 import { IAuthenticatedMessageData } from "../torrente/messages/models/AuthenticatedMessage";
+import { HYPERLEDGER_COIN_DIVISOR } from "./config";
 import { AccountContract } from "./smart-contracts/AccountContract";
 import { PaymentIntentionContract } from "./smart-contracts/PaymentIntentionContract";
 import { RedeemContract } from "./smart-contracts/RedeemContract";
+
 
 export class HyperledgerPaymentService implements PaymentServiceInterface {
     redeemContract: RedeemContract;
     paymentIntentionContract: PaymentIntentionContract;
     accountContract: AccountContract;
 
+    coinDivisor: number;
+    isInitialized: boolean;
+
+    initializedResolver: (value?: void) => void = () => {};
+
+    private static instance: HyperledgerPaymentService;
+
+    public static getInstance = (): HyperledgerPaymentService => {
+        if (!HyperledgerPaymentService.instance){
+            throw Error("Hyperledger payment service has not been initialized");
+        }
+        return HyperledgerPaymentService.instance;
+    }
+
+    public constructor() {
+        HyperledgerPaymentService.instance = this;
+        this.coinDivisor = HYPERLEDGER_COIN_DIVISOR;
+        this.isInitialized = false;
+    }
+
     public init = async (authData: IAuthenticatedMessageData): Promise<void> => {
         this.redeemContract = new RedeemContract(authData);
         this.paymentIntentionContract = new PaymentIntentionContract(authData);
         this.accountContract = new AccountContract(authData);
 
-        this.redeemContract.init();
-        this.paymentIntentionContract.init();
-        this.accountContract.init();
+        await this.redeemContract.init();
+        await this.paymentIntentionContract.init();
+        await this.accountContract.init();
+
+        this.isInitialized = true;
+
+        this.initializedResolver();
+    }
+
+    public waitTillInitialized = async(): Promise<void> => {
+        if (this.isInitialized){
+            return new Promise((resolve, _reject) => {
+                resolve(null);
+            })
+        }
+        else{
+            const initializationPromise = new Promise((resolve: (value: void) => void, _reject) => {
+                this.initializedResolver = resolve;
+            })
+            return initializationPromise;
+        }
     }
 
     public evaluateAccount = async (accountId: string): Promise<AccountType> => {
@@ -35,7 +75,7 @@ export class HyperledgerPaymentService implements PaymentServiceInterface {
     }
 
     public queryGetPiecePrice = async (): Promise<number> => {
-        return await this.paymentIntentionContract.queryGetPiecePrice();
+        return this.paymentIntentionContract.queryGetPiecePrice();
     }
 
     public invokeRedeem = async (redeemArguments: RedeemArguments): Promise<void> => {

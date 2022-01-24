@@ -48,7 +48,7 @@ export class SessionSaver{
 
     public static saveSession(session: SessionController){
         const certificate = session.loadedUserCertificate;
-        const sessionToSave = `${sha256(certificate)}.pay`;
+        const sessionToSave = `./saved-sessions/${sha256(certificate)}.pay`;
 
         const privateKey = session.loadedUserKey;
         const keyToEncrypt = sha256(privateKey).toString();

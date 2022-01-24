@@ -9,7 +9,7 @@ export class ConnectionNotification implements INotificationModel <IConnectionNo
     type: NotificationTypesEnum;
 
     constructor(data: IConnectionNotifyData){
-        this.type = NotificationTypesEnum.PaymentNotification;
+        this.type = NotificationTypesEnum.ConnectionNotification;
         this.data = data;
     }
 

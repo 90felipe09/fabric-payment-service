@@ -1,5 +1,5 @@
+import { CommitmentMessage } from "../../p2p/models/CommitmentMessage"
 import { DownloadDeclarationIntentionsMap } from "../controllers/SessionController"
-import { CommitmentContent, CommitmentMessage } from "../models/Commitment"
 
 export type ReceiverHandlerData = {
     commitment: CommitmentMessage,

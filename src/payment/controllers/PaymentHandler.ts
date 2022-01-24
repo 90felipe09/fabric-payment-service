@@ -1,31 +1,51 @@
-import { Commitment, CommitmentMessage } from "../models/Commitment";
+import { CommitmentMessage } from "../../p2p/models/CommitmentMessage";
+import { Commitment } from "../models/Commitment";
 import { HashChain } from "../models/HashChain";
+import { MicroPaymentProtocol } from "../rules/MicroPaymentProtocol";
+import { SessionController } from "./SessionController";
 
-export class PaymentHandler {
+export class PaymentHandler  {
     commitment: Commitment;
     hashChain: HashChain;
     receiverIp: string;
+    magneticLink: string;
+    receiverCertificate: string;
+    userCertificate: string;
+    downloadIntentionId: string;
+    validated: boolean;
+    paymentProtocol: MicroPaymentProtocol
+
+    public activatePaymentProtocol = (paymentProtocol: MicroPaymentProtocol) => {
+        this.paymentProtocol = paymentProtocol;
+    }
+
+    public validatePaymentHandler = (receiverCertificate: string) => {
+        this.receiverCertificate = receiverCertificate;
+        const sessionController = SessionController.getInstance();
+        this.commitment.initCommitment(
+            this.magneticLink, 
+            this.receiverCertificate, 
+            this.hashChain.getHashRoot(), 
+            sessionController.loadedUserKey,
+            sessionController.loadedUserCertificate,
+            this.downloadIntentionId
+        )
+        this.validated = true;
+    }
 
     public initPaymentHandler = (
         ip: string,
-        receiverCertificate: string,
         paymentSize: number,
-        userPrivateKey: string,
         magneticLink: string,
-        userCertificate: string,
         downloadIntentionId: string) => {
         const hashChainSize = paymentSize
         this.hashChain = new HashChain();
         this.hashChain.initHashChain(hashChainSize);
         this.commitment = new Commitment();
         this.receiverIp = ip;
-        this.commitment.initCommitment(
-            magneticLink, 
-            receiverCertificate, 
-            this.hashChain.getHashRoot(), 
-            userPrivateKey,
-            userCertificate,
-            downloadIntentionId)
+        this.magneticLink = magneticLink;
+        this.downloadIntentionId = downloadIntentionId;
+        this.validated = false;
     }
 
     public loadPaymentHandler = (ip: string, commitment: CommitmentMessage, hashChain: string[], lastHashSent: string, lastHashIndex: number) => {
@@ -47,5 +67,4 @@ export class PaymentHandler {
         const hashLink = this.hashChain.payHash()
         return [hashLink, hashLinkIndex];
     }
-
 }

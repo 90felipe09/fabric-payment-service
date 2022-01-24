@@ -18,7 +18,8 @@
     "start": "tsc && node dist/app.js",
     "start:dev": "nodemon src/app.ts",
     "test": "jest",
-    "build-exe": "tsc && pkg . --out-path ./pkg/"
+    "build-exe": "tsc && pkg . --out-path ./pkg/",
+    "emulate": "nodemon src/payment/tests/PayfluxoEmulator.ts"
   },
   "repository": {
     "type": "git",

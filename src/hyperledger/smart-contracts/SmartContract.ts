@@ -13,6 +13,10 @@ export class SmartContract {
         this.smartContractName = smartContractName;
     }
 
+    public close = () => {
+        this.gatewayConnection.peerGateway.disconnect();
+    }
+
     public init = async () => {
         try{
             console.log(`[INFO] Fetching chaincode reference for ${this.smartContractName}`)
@@ -20,7 +24,7 @@ export class SmartContract {
             console.log(`[INFO] Contract reference obtained: ${this.contract.chaincodeId}`)
         }
         catch (error){
-            console.log(`[ERROR] Couldn't feetch contract reference: ${error}`)
+            console.log(`[ERROR] Couldn't fetch contract reference: ${error}`)
         }
     };
 

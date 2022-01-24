@@ -21,5 +21,15 @@ describe("test HashChain class", () => {
     it("first hash payment hash must be equal to hash root.", () => {
         expect(sha256(firstPaidHash).toString()).toBe(newHashChain.getHashRoot());
     });
+
+    it("Should make right payments", () => {
+        var lastHash = firstPaidHash
+        for (let index = 0; index < 6; index++) {
+            var hashLink = newHashChain.payHash();
+            expect(sha256(hashLink).toString()).toBe(lastHash)
+            lastHash = hashLink;   
+        }
+
+    })
 });
 

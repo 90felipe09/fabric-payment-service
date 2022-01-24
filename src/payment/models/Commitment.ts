@@ -1,27 +1,13 @@
 import crypto from 'crypto';
 import sha256 from 'crypto-js/sha256';
+import { CommitmentMessage, CommitmentContent } from '../../p2p/models/CommitmentMessage';
 import { getAddress } from '../utils/userAddress';
 
+
 export const ALGORITHM = "SHA256";
-const SIGNATURE_ALGORITHM = "ECDSA";
-const HASHING_ALG_NAME = "SHA-256";
+export const SIGNATURE_ALGORITHM = "ECDSA";
+export const HASHING_ALG_NAME = "SHA-256";
 export const SIGNATURE_FORMAT = "hex";
-
-export type CommitmentMessage = {
-    data: CommitmentContent;
-    commitment_hash: string;
-    hashing_alg: string;
-    signature_alg: string;
-    signature: string;
-}
-
-export type CommitmentContent = {
-    payment_intention_id: string;
-    receiver_address: string;
-    payer_address: string;
-    hash_root: string;
-    data_id: string;
-}
 
 export class Commitment {
     commitmentMessage: CommitmentMessage;
