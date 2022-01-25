@@ -9,7 +9,7 @@ export class SessionLoader {
         const certificate = sessionController.loadedUserCertificate;
         const privateKey = sessionController.loadedUserKey
         
-        const sessionToRecover = `./saved-sessions/${sha256(certificate)}.pay`;
+        const sessionToRecover = `./${sha256(certificate)}.pay`;
         fs.readFile(sessionToRecover, 'utf8', function (err,data) {
             if (err) {
               return console.log("[INFO] New user");

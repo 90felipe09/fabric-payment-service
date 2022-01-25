@@ -48,11 +48,7 @@ export class SessionSaver{
 
     public static saveSession(session: SessionController){
         const certificate = session.loadedUserCertificate;
-        const sessionsFolder = 'saved-sessions'
-        const sessionToSave = `./${sessionsFolder}/${sha256(certificate)}.pay`;
-
-        if (!fs.existsSync(sessionsFolder))
-            fs.mkdirSync(sessionsFolder);
+        const sessionToSave = `./${sha256(certificate)}.pay`;
 
         const privateKey = session.loadedUserKey;
         const keyToEncrypt = sha256(privateKey).toString();
