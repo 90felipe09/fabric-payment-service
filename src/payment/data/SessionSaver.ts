@@ -5,6 +5,8 @@ import { PaymentHandler } from "../controllers/PaymentHandler";
 import { ReceiverHandler } from "../controllers/ReceiverHandler";
 import { SessionController } from "../controllers/SessionController";
 import { PayerHandlerData, ReceiverHandlerData, SessionData } from "./SessionData";
+import { homedir } from "os";
+import { TORRENTE_SESSIONS_SAVE_FOLDER } from "../../config";
 
 export class SessionSaver{
     private static convertSessionObject = (session: SessionController): SessionData =>{
@@ -48,7 +50,10 @@ export class SessionSaver{
 
     public static saveSession(session: SessionController){
         const certificate = session.loadedUserCertificate;
-        const sessionToSave = `./${sha256(certificate)}.pay`;
+        const sessionToSave = `${homedir()}/${TORRENTE_SESSIONS_SAVE_FOLDER}/${sha256(certificate)}.pay`;
+
+        if(!fs.existsSync(`${homedir()}/${TORRENTE_SESSIONS_SAVE_FOLDER}`))
+            fs.mkdirSync(`${homedir()}/${TORRENTE_SESSIONS_SAVE_FOLDER}`)
 
         const privateKey = session.loadedUserKey;
         const keyToEncrypt = sha256(privateKey).toString();

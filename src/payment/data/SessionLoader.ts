@@ -1,15 +1,17 @@
 import { AES, enc } from "crypto-js";
 import sha256 from 'crypto-js/sha256';
 import fs from 'fs';
+import { TORRENTE_SESSIONS_SAVE_FOLDER } from "../../config";
 import { SessionController } from "../controllers/SessionController";
 import { PayerHandlerData, ReceiverHandlerData, SessionData } from "./SessionData";
+import { homedir } from "os";
 
 export class SessionLoader {
     public static LoadSession(sessionController: SessionController){
         const certificate = sessionController.loadedUserCertificate;
         const privateKey = sessionController.loadedUserKey
         
-        const sessionToRecover = `./${sha256(certificate)}.pay`;
+        const sessionToRecover = `${homedir()}/${TORRENTE_SESSIONS_SAVE_FOLDER}/${sha256(certificate)}.pay`;
         fs.readFile(sessionToRecover, 'utf8', function (err,data) {
             if (err) {
               return console.log("[INFO] New user");
