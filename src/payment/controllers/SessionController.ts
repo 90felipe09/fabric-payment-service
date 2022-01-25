@@ -127,7 +127,7 @@ export class SessionController {
         this.receivingListeners = {};
         this.paymentHandlers = {};
         PayfluxoServer.closeServer();
-        SessionController.destroyInstance();
+        PayfluxoServer.waitTillClosed().then(SessionController.destroyInstance)
     }
 
     public addReceivingListener(payerIp: string, payerPublicKey: string, commitment: CommitmentMessage){

@@ -1,4 +1,5 @@
-import { MessagesHandlersMap } from './models/MessagesHandlersMap';
+import { MessagesHandlersMap } from "./models/MessagesHandlersMap";
+
 
 export class MessagesHandler {
     private static instance: MessagesHandler;

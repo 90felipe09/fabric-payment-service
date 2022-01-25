@@ -15,6 +15,9 @@ export class PayfluxoServer {
     private static wss: WebSocket.Server;
     private static connectionsMap: ConnectionsMap;
 
+    private static server: http.Server
+    private static app;
+
     private static endResolver: (value?: unknown) => void = () => {};
     
     public getConnectionsMap = (): ConnectionsMap => {
@@ -29,12 +32,16 @@ export class PayfluxoServer {
     }
 
     constructor() {
-        const app = express();
-        const server = http.createServer(app);
+        PayfluxoServer.app = express();
+        PayfluxoServer.server = http.createServer(PayfluxoServer.app);
         PayfluxoServer.connectionsMap = new ConnectionsMap();
-        PayfluxoServer.wss = new WebSocket.Server({ clientTracking: true, server });
+        const serverParams: WebSocket.ServerOptions = {
+            clientTracking: true,
+            server: PayfluxoServer.server
+        }
+        PayfluxoServer.wss = new WebSocket.Server(serverParams);
 
-        server.listen(PAYFLUXO_LISTENING_PORT, () => {
+        PayfluxoServer.server.listen(PAYFLUXO_LISTENING_PORT, () => {
             console.log(`[INFO] Payfluxo started on port: ${PAYFLUXO_LISTENING_PORT}`);
         })
 
@@ -54,7 +61,7 @@ export class PayfluxoServer {
             ws.on("close", (_ws: WebSocket, _code: number, _reason: string) => PayfluxoServer.handleCloseConnection(connectionResources))
         })
 
-        app.get('/', (_req, res) => {res.send("I'm listening");})
+        PayfluxoServer.app.get('/', (_req, res) => {res.send("I'm listening");})
 
         PayfluxoServer.instance = this;
     }
@@ -74,12 +81,12 @@ export class PayfluxoServer {
     }
 
     public static closeServer = () => {
-        PayfluxoServer.wss.close();
         Object.values(PayfluxoServer.connectionsMap.getConnections()).forEach(conn => {
             conn.ws.close()
         })
+        PayfluxoServer.wss.close();
+        PayfluxoServer.server.close();
         PayfluxoServer.endResolver();
-        delete PayfluxoServer.instance;
     }
 
     private static handleCloseConnection = (connectionResources: ConnectionResource) => {
