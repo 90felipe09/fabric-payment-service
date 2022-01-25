@@ -6,6 +6,8 @@ import { PLANOC_ENDPOINT } from "./config";
 import { RequestSigner } from "./RequestSigner";
 
 export class PlanocPaymentService implements PaymentServiceInterface {
+    coinDivisor: number;
+    waitTillInitialized: () => Promise<void>;
     authData: IAuthenticatedMessageData;
 
     public init = async (authData: IAuthenticatedMessageData): Promise<void> => {
