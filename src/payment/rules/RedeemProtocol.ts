@@ -13,7 +13,12 @@ export class RedeemProtocol implements Protocol{
             hashLinkIndex: this.receiverListener.lastHashIndex
         }
         const paymentService = SessionController.getInstance().paymentService;
-        await paymentService.invokeRedeem(redeemArguments);
+        try{
+            await paymentService.invokeRedeem(redeemArguments);
+        }
+        catch{
+            console.log(`[INFO] Tokens already redeemed for ${redeemArguments.commitment.commitment_hash}`)
+        }
         this.receiverListener.updateRedeemableValues(
             redeemArguments.hashLink,
             redeemArguments.hashLinkIndex);
