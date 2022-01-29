@@ -3,11 +3,11 @@ import { PAYFLUXO_EXTERNAL_PORT } from "../../config";
 import { PayfluxoServer } from "../../p2p/connections/PayfluxoServer";
 import { ConnectionNotifier } from "../../p2p/controllers/ConnectionNotifier";
 import { ConnectionResource } from "../../p2p/controllers/ConnectionResource";
+import { ConnectionsMap } from "../../p2p/controllers/ConnectionsMap";
 import { CertificateResponse } from "../../p2p/models/CertificateResponse";
-import { CommitmentMessage } from "../../p2p/models/CommitmentMessage";
 import { CommitmentResponseStatusEnum, CommitResponseContent } from "../../p2p/models/CommitResponse";
 import { Observer } from "../../p2p/models/ObserverPattern";
-import { IPayfluxoRequestModel, PayfluxoRequestsTypesEnum } from "../../p2p/models/PayfluxoRequestModel";
+import { PayfluxoRequestsTypesEnum } from "../../p2p/models/PayfluxoRequestModel";
 import { getConnectionHash, getPeerHash } from "../../p2p/util/peerHash";
 import { IDownloadedBlockMessageData } from "../../torrente/messages/models/DownloadedBlockMessage";
 import { PaymentHandler } from "../controllers/PaymentHandler";
@@ -34,14 +34,22 @@ export class CommitmentRegisterProtocol implements Protocol {
         )
         const payfluxoServer = PayfluxoServer.getInstance();
         const connectionsMap = payfluxoServer.getConnectionsMap();
-        const wsUploader = new WebSocket(`ws://${validatedIp}:${PAYFLUXO_EXTERNAL_PORT}`)
-        wsUploader.on('open', (ws: WebSocket) => {
-            connectionsMap.addConnection(connectionHash, wsUploader, this.downloadData.uploaderIp, PAYFLUXO_EXTERNAL_PORT)
-            const connection = connectionsMap.getConnection(connectionHash);
-            connection.requestCertificate();
-            const certificateReceiverWaiter = new CertificateReceiverWaiter(connection, this.downloadData);
-            connection.notifier.attach(certificateReceiverWaiter);
-        })
+        if (!connectionsMap.isConnected(connectionHash)){
+            const wsUploader = new WebSocket(`ws://${validatedIp}:${PAYFLUXO_EXTERNAL_PORT}`)
+            wsUploader.on('open', (ws: WebSocket) => {
+                connectionsMap.addConnection(connectionHash, wsUploader, this.downloadData.uploaderIp, PAYFLUXO_EXTERNAL_PORT)
+                this.requestCertificateAndWait(connectionsMap, connectionHash);
+            })
+            return;
+        }
+        this.requestCertificateAndWait(connectionsMap, connectionHash);
+    }
+
+    private requestCertificateAndWait = (connectionsMap: ConnectionsMap, connectionHash: string) => {
+        const connection = connectionsMap.getConnection(connectionHash);
+        connection.requestCertificate();
+        const certificateReceiverWaiter = new CertificateReceiverWaiter(connection, this.downloadData);
+        connection.notifier.attach(certificateReceiverWaiter);
     }
 
     constructor(downloadData: IDownloadedBlockMessageData) {
