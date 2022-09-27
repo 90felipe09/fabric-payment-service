@@ -4,3 +4,4 @@ package-lock.json
 ibmUser.id
 saved-sessions
 pkg
+build/
