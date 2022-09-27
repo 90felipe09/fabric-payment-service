@@ -1,8 +1,8 @@
 import { createInterface } from "readline"
 import { ConnectionController } from "../../torrente/ConnectionController"
+import { IAuthenticationMessageData } from "../../torrente/messages/models/AuthenticationMessage"
 import { TorrenteInterfaceSimulator } from "../../torrente/tests/TorrenteInterfaceSimulator"
 import { payfluxoMessagesHandler } from "../handlers/TorrenteMessagesHandler"
-import { UserIdentification } from "../models/UserIdentification"
 
 console.log('Payfluxo - Torrente emulator')
 
@@ -17,10 +17,10 @@ const askForCommand = (torrenteEmulator: TorrenteInterfaceSimulator) => {
     })
 }
 
-const identificationExample: UserIdentification = {
-    certificate: "-----BEGIN CERTIFICATE-----\nMIIClTCCAjygAwIBAgIUWTbIqevnp0TFfBdw23diQgZg3IQwCgYIKoZIzj0EAwIw\naDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMRQwEgYDVQQK\nEwtIeXBlcmxlZGdlcjEPMA0GA1UECxMGRmFicmljMRkwFwYDVQQDExBmYWJyaWMt\nY2Etc2VydmVyMB4XDTIyMDExNzEzNTAwMFoXDTIzMDExNzE2MTYwMFowTTEcMAsG\nA1UECxMEb3JnMTANBgNVBAsTBmNsaWVudDEtMCsGA1UEAxMkMzRjYzJlNDUtNDk5\nNy00ZTM1LThkMDQtNWRhODk4MTI4OTMzMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD\nQgAEBMfHfF2guPQQvSbr2BX20R9n4k7mEv0EVRQ+Z6j/jHjpY+PEuDl2FRALK9Nt\nCw2/VgyCAI3ldHSTvVDfy/wtwaOB3jCB2zAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0T\nAQH/BAIwADAdBgNVHQ4EFgQUhlsocUgwJzzb17lFhdzkNJko9iEwHwYDVR0jBBgw\nFoAUAkP8m6+aODiZGM8MGgpsXDW68c0wewYIKgMEBQYHCAEEb3siYXR0cnMiOnsi\naGYuQWZmaWxpYXRpb24iOiJvcmcxIiwiaGYuRW5yb2xsbWVudElEIjoiMzRjYzJl\nNDUtNDk5Ny00ZTM1LThkMDQtNWRhODk4MTI4OTMzIiwiaGYuVHlwZSI6ImNsaWVu\ndCJ9fTAKBggqhkjOPQQDAgNHADBEAiBIMPPHsdCtmnhuy0AgWH7fcn7fuCxvSnLv\n048U6FkFiwIgVlQgl35zcOfudyUYJLh72ZM0mWRLHC/OAjNDZgSmi34=\n-----END CERTIFICATE-----\n",
-    privateKey: "-----BEGIN PRIVATE KEY-----\r\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgpXO5lsH+Nc9BUlwE\r\n3cznJg4E4/dVDHbO0qYH2Q1K0EahRANCAAQEx8d8XaC49BC9JuvYFfbRH2fiTuYS\r\n/QRVFD5nqP+MeOlj48S4OXYVEAsr020LDb9WDIIAjeV0dJO9UN/L/C3B\r\n-----END PRIVATE KEY-----\r\n",
-    orgMSPID: "Org1MSP"
+const identificationExample: IAuthenticationMessageData = {
+    encrypted_content: "CfKPGdsqNPVzPp5/1G1y1Z+LAnzkiDAZwa5fE1BVZYnlKlSbsSXJTCj1Vmo1ybFLnO5YCog+rQMde/qvdfM19FNZ7WWqWyFxYQx6OFJSfekntqZJRWYn/EBuJW6ynkRqc8mF4oaL+RfM7BAyKwZriQqoOppD9sKQyOkcsWfsQ+8A00+OhWwJqaiHWSc3QkS0YvnB5+8XtSVzkcP9X0WPMlCkpiRSftru5Wp69uJ/7KG3WMviSPYIykcpwk+Q6xu2R7l28Cr4TI1TNNZgb58lasGSOdAng0ZS1gxyrqvZoQ++UI1y1LeJbi5nZlDEGo/ZiVG3j+e3gc53OlB4VwzSs7F9iP7l+DSFFUOXeqfT9Ds3L4dZOEteY+HXPsQbFfMK7ua41cj7dCTiD29T6usp+hWWpoNKz06fF58OIToRiCWdCczRgLpo1NF6vtfmoGXuYMVzvL3tLPrelnSfwcdjYO26mkwJFfyROKmh0e4buk8qNWA+Ej6QOAuhfs8sefUGbsPw2RBsDyPaK0u4FBCDbsbM/opQXW4w9dqc+DK21r7cszEMiGCrh204DLDrpOiY6JkRtLOzAb1Tk7JVDOVnqNcd9jrSOYLPWxHzEF4SfbalkQ2Z2t27c31Gnnvz0XboTkqemng5UVuVNYKMCbe6HcAvTV8jbhYPwKqbh59gkHO8IX0JLP0T/kH17sffcZg3ri3i+P8hSzyzH4LmMYxiWYBTn4S1GrHeizu9i/Pur21kjw+rdw/5v3F45gbOvniLqpbPNFflbqRwdGimk6LALJdsB5YkJkSKdxTLEhNH/w0qiafd+YQOkWO2XdTmWABR5wEFYJhu4q/MPXkmaNzLmWBPLvTcw6MPuGjO4Oekql3g2PCpxvOu04YMHIB76Y2LFX+pEth4nFuMr+dTkQbX4BFgIVoSGtrh/5wJqvWoRCFnHKqmRRjo6QT28STt6iacN4jPkYEq69f5Ag6XxU60jA2EgBifmdtEhWUNg6m9vszaWAsLXEFFbky23jN8kGwnWNFYzzZJ0TnozukJ/XcY/OusRjbeFTZCf1tvUrEoDkwosK/PpVbtG/vEpLmhNLP3/b5O/qGjyQdItG0cF1vEKr3SM9OGeS/dvHqpcu+F5I7Ja9okBYRWKyn2jHy9h5EW+GeyatxfeMpjbZqU+VHCKfMl9jm8gO++Ncon1uoW1CECCZF75i+RUmgWi8pwMbZmwODsVAotSrvMzyy8QtVtGa+oSvNCvt7PMu7kjuLqaLUBO3PklnOvtRRfx4piCg68dljgjz4/0J7b2MAHHoi5Iahzg3K5ThE57C/2ugAxA1DU2EWw6DdjadmbNQhr5RnNYdS9wZ6NMGsbLE1Ju6zrH82Hg3fq0jRjmjrCshlz7dwt5mksBAxjsloGzcwlfzAGAvDoO+f+XjXHFpdJFd73S3Gla6Zx0AjdtPbtpFON5ND21ed70wa4GOd+AW48y6nbPqRcOryFIWSzgNYaEFDtJhCH34ZNRbx4paK9lfJKE4DSkqQrCPQO8v/1HCFZENpAyoTn1Df0EOU4LqyQ6gOsCoh+hVqaIATDIQhe2fpecVFVbrhke3JEowr3wjfBFuTQzTwJ34phqQ4Df8oXc7JrMRdG/M9nVxT7p+O1FxlhiOCQIiA=",
+    password: "teste",
+    salt: "peJ0Sp76flRHS31H87dxEg=="
 }
 
 const commandReaction = (value: string, torrenteEmulator: TorrenteInterfaceSimulator) => {

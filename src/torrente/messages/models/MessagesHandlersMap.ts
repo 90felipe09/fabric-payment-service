@@ -1,4 +1,4 @@
-import { IAuthenticatedMessageData } from "./AuthenticatedMessage";
+import { IAuthenticationMessageData } from "./AuthenticationMessage";
 import { IClosingMessageData } from "./ClosingMessage";
 import { IDownloadedBlockMessageData } from "./DownloadedBlockMessage";
 import { IDownloadIntentionMessageData } from "./DownloadIntentionMessage";
@@ -8,7 +8,7 @@ import { IRefreshWalletMessageData } from "./RefreshWalletMessage";
 
 export type MessagesHandlersMap = {
     DownloadedBlock: (data: IDownloadedBlockMessageData) => void;
-    Authenticated: (data: IAuthenticatedMessageData) => void;
+    Authentication: (data: IAuthenticationMessageData) => void;
     Logout: (data: ILogoutMessageData) => void;
     Closing: (data: IClosingMessageData) => void;
     DownloadIntention: (data: IDownloadIntentionMessageData) => void;

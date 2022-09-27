@@ -5,7 +5,6 @@ import { ConnectionResource } from '../../p2p/controllers/ConnectionResource';
 import { ConnectionsMap } from "../../p2p/controllers/ConnectionsMap";
 import { CommitmentMessage } from '../../p2p/models/CommitmentMessage';
 import { getPeerHash } from "../../p2p/util/peerHash";
-import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
 import { PaymentHashMap, ReceiverHashMap } from "../models/HandlersHashMap";
 import { PaymentServiceInterface } from "../models/PaymentServiceInterface";
 import { UserIdentification } from "../models/UserIdentification";
@@ -66,14 +65,8 @@ export class SessionController {
         this.paymentHandlers = {};
         this.connectionsMap = new ConnectionsMap();
 
-        const authData: IAuthenticatedMessageData = {
-            certificate: userId.certificate,
-            mspId: userId.orgMSPID,
-            privateKey: userId.privateKey
-        }
-
         this.paymentService = PAYMENT_SERVICE;
-        this.paymentService.init(authData);
+        this.paymentService.init(userId);
 
         this.downloadDeclarationIntentions = {};
         this.peerConnectionCorrespondenceMap = {};

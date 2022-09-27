@@ -1,5 +1,5 @@
 import { CommitmentMessage } from "../../p2p/models/CommitmentMessage";
-import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
+import { UserIdentification } from "./UserIdentification";
 
 
 export type RedeemArguments = {
@@ -41,7 +41,7 @@ export interface PaymentServiceInterface {
     invokeCreatePaymentIntention: (createPaymentIntention: CreatePaymentIntentionArguments) => Promise<PaymentIntentionResponse>;
     invokeReadPaymentIntention: (downloadIntentionId: string) => Promise<PaymentIntentionResponse>;
     queryGetPiecePrice: () => Promise<number>;
-    init: (authData: IAuthenticatedMessageData) => Promise<void>;
+    init: (authData: UserIdentification) => Promise<void>;
 
     waitTillInitialized: () => Promise<void>;
 }

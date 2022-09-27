@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Contract, Gateway, GatewayOptions, Network, Wallet, Wallets, X509Identity } from 'fabric-network';
+import { UserIdentification } from '../../payment/models/UserIdentification';
 import { getAddress } from '../../payment/utils/userAddress';
-import { IAuthenticatedMessageData } from '../../torrente/messages/models/AuthenticatedMessage';
 import { CHAINCODE_ID, HYPERLEDGER_CONNECTION_PROFILE, PAYMENT_CHANNEL } from '../config';
 import { connectionProfileAdapter } from '../utils/ConnectionProfileAdapter';
 
@@ -15,7 +15,7 @@ export class GatewayConnection {
 
     public wallet: Wallet;
 
-    public constructor (credentials: IAuthenticatedMessageData){
+    public constructor (credentials: UserIdentification){
         this.clientIdentity = this.getIdentity(credentials);
     }
 
@@ -67,13 +67,13 @@ export class GatewayConnection {
         return chaincode;
     }
 
-    private getIdentity = (credentials: IAuthenticatedMessageData): X509Identity => {
+    private getIdentity = (credentials: UserIdentification): X509Identity => {
         const x509identity: X509Identity = {
             credentials: {
                 certificate: credentials.certificate,
                 privateKey: credentials.privateKey,
             },
-            mspId: credentials.mspId,
+            mspId: credentials.orgMSPID,
             type: "X.509"
         }
     

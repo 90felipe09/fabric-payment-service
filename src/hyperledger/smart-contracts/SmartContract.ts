@@ -1,5 +1,5 @@
 import { Contract } from 'fabric-network';
-import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
+import { UserIdentification } from '../../payment/models/UserIdentification';
 import { GatewayConnection } from "../connections/GatewayConnection";
 
 export class SmartContract {
@@ -8,7 +8,7 @@ export class SmartContract {
     contract : Contract;
     smartContractName : string;
     
-    public constructor (credentials: IAuthenticatedMessageData, smartContractName: string){
+    public constructor (credentials: UserIdentification, smartContractName: string){
         this.gatewayConnection = new GatewayConnection(credentials);
         this.smartContractName = smartContractName;
     }

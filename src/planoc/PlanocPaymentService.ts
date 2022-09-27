@@ -1,16 +1,16 @@
 import axios from "axios";
 import { AccountType, CreatePaymentIntentionArguments, PaymentIntentionResponse, PaymentServiceInterface, RedeemArguments } from "../payment/models/PaymentServiceInterface";
+import { UserIdentification } from "../payment/models/UserIdentification";
 import { getAddress } from "../payment/utils/userAddress";
-import { IAuthenticatedMessageData } from "../torrente/messages/models/AuthenticatedMessage";
 import { PLANOC_ENDPOINT } from "./config";
 import { RequestSigner } from "./RequestSigner";
 
 export class PlanocPaymentService implements PaymentServiceInterface {
     coinDivisor: number;
     waitTillInitialized: () => Promise<void>;
-    authData: IAuthenticatedMessageData;
+    authData: UserIdentification;
 
-    public init = async (authData: IAuthenticatedMessageData): Promise<void> => {
+    public init = async (authData: UserIdentification): Promise<void> => {
         this.authData = authData;
     }
 

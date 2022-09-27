@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { TORRENTE_NOTIFICATION_PORT } from '../../config';
 import { UserIdentification } from '../../payment/models/UserIdentification';
-import { IAuthenticatedMessageData } from '../messages/models/AuthenticatedMessage';
+import { IAuthenticationMessageData } from '../messages/models/AuthenticationMessage';
 import { IClosingMessageData } from '../messages/models/ClosingMessage';
 import { IDownloadedBlockMessageData } from '../messages/models/DownloadedBlockMessage';
 import { IDownloadIntentionMessageData } from '../messages/models/DownloadIntentionMessage';
@@ -80,14 +80,14 @@ export class TorrenteInterfaceSimulator {
         this.torrenteSocket.send(refreshWalletString)
     }
 
-    public authenticate = (userId: UserIdentification) => {
-        const authData: IMessagesModel<IAuthenticatedMessageData> = {
+    public authenticate = (credentials: IAuthenticationMessageData) => {
+        const authData: IMessagesModel<IAuthenticationMessageData> = {
             data: {
-                certificate: userId.certificate,
-                privateKey: userId.privateKey,
-                mspId: userId.orgMSPID
+                encrypted_content: credentials.encrypted_content,
+                password: credentials.password,
+                salt: credentials.salt
             },
-            type: MessagesTypesEnum.Authenticated
+            type: MessagesTypesEnum.Authentication
         }
         const authString = JSON.stringify(authData)
         this.torrenteSocket.send(authString);

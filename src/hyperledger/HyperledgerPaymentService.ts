@@ -1,5 +1,5 @@
 import { AccountType, CreatePaymentIntentionArguments, PaymentIntentionResponse, PaymentServiceInterface, RedeemArguments } from "../payment/models/PaymentServiceInterface";
-import { IAuthenticatedMessageData } from "../torrente/messages/models/AuthenticatedMessage";
+import { UserIdentification } from "../payment/models/UserIdentification";
 import { HYPERLEDGER_COIN_DIVISOR } from "./config";
 import { AccountContract } from "./smart-contracts/AccountContract";
 import { PaymentIntentionContract } from "./smart-contracts/PaymentIntentionContract";
@@ -31,7 +31,7 @@ export class HyperledgerPaymentService implements PaymentServiceInterface {
         this.isInitialized = false;
     }
 
-    public init = async (authData: IAuthenticatedMessageData): Promise<void> => {
+    public init = async (authData: UserIdentification): Promise<void> => {
         this.redeemContract = new RedeemContract(authData);
         this.paymentIntentionContract = new PaymentIntentionContract(authData);
         this.accountContract = new AccountContract(authData);
