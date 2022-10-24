@@ -1,5 +1,5 @@
 import { assert } from "console";
-import { IAuthenticatedMessageData } from "../messages/models/AuthenticatedMessage";
+import { IAuthenticationMessageData } from "../messages/models/AuthenticationMessage";
 import { IClosingMessageData } from "../messages/models/ClosingMessage";
 import { IDownloadedBlockMessageData } from "../messages/models/DownloadedBlockMessage";
 import { IDownloadIntentionMessageData } from "../messages/models/DownloadIntentionMessage";
@@ -8,10 +8,10 @@ import { MessagesHandlersMap } from "../messages/models/MessagesHandlersMap";
 import { IRedeemValuesMessageData } from "../messages/models/RedeemValuesMessage";
 import { IRefreshWalletMessageData } from "../messages/models/RefreshWalletMessage";
 
-const authenticationHandlerMock = (data: IAuthenticatedMessageData) => {
-    assert(typeof(data.certificate) === 'string');
-    assert(typeof(data.mspId) === 'string');
-    assert(typeof(data.privateKey) === 'string')
+const authenticationHandlerMock = (data: IAuthenticationMessageData) => {
+    assert(typeof(data.encrypted_content) === 'string');
+    assert(typeof(data.password) === 'string');
+    assert(typeof(data.salt) === 'string')
 }
 
 const closingHandlerMock = (data: IClosingMessageData) => {
@@ -43,7 +43,7 @@ const refreshWalletHandlerMock = (data: IRefreshWalletMessageData) => {
 }
 
 export const messagesHandlerMock: MessagesHandlersMap = {
-    Authenticated: authenticationHandlerMock,
+    Authentication: authenticationHandlerMock,
     Closing: closingHandlerMock,
     DownloadIntention: downloadIntentionHandlerMock,
     DownloadedBlock: downloadBlockHandlerMock,

@@ -1,6 +1,6 @@
 export enum MessagesTypesEnum {
     DownloadedBlock = "DownloadedBlock",
-    Authenticated = "Authenticated",
+    Authentication = "Authentication",
     Closing = "Closing",
     Logout = "Logout",
     DownloadIntention = "DownloadIntention",

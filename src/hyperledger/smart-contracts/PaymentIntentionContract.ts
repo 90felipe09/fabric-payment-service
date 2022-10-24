@@ -1,7 +1,7 @@
 import { Contract } from "fabric-network";
 import { v4 as uuidv4 } from "uuid";
 import { PaymentIntentionResponse } from "../../payment/models/PaymentServiceInterface";
-import { IAuthenticatedMessageData } from "../../torrente/messages/models/AuthenticatedMessage";
+import { UserIdentification } from "../../payment/models/UserIdentification";
 import { PAYMENT_INTENTION_CONTRACT } from "../config";
 import { SmartContract } from "./SmartContract";
 
@@ -21,7 +21,7 @@ export const EXPIRATION_DELTA_DAYS = 7;
 
 export class PaymentIntentionContract extends SmartContract {
     chaincodeReference: Contract;
-    public constructor(credentials: IAuthenticatedMessageData) {
+    public constructor(credentials: UserIdentification) {
         super(credentials, PAYMENT_INTENTION_CONTRACT);
     }
 

@@ -1,5 +1,5 @@
 {
-  "name": "fabric-payment-service",
+  "name": "payfluxo",
   "version": "1.0.0",
   "description": "payment service for the biobank",
   "main": "index.js",
@@ -58,6 +58,7 @@
     "fabric-network": "^2.2.5",
     "jsrsasign": "^10.4.0",
     "jsrsasign-util": "^1.0.5",
+    "lyra2-amazon": "^1.0.1",
     "nat-puncher": "^0.1.8",
     "uuid": "^8.3.2",
     "ws": "^7.4.5"

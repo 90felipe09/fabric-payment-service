@@ -8,7 +8,7 @@ import { handleRedeemValues } from "./RedeemValuesHandler";
 import { handleRefreshWallet } from "./RefreshWalletHandler";
 
 export const payfluxoMessagesHandler: MessagesHandlersMap = {
-    Authenticated: handleAuthentication,
+    Authentication: handleAuthentication,
     Closing: handleClosing,
     DownloadIntention: handleDownloadIntention,
     DownloadedBlock: handleDownloadedBlock,

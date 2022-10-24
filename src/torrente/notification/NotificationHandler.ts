@@ -1,6 +1,8 @@
 import { PAYFLUXO_EXTERNAL_PORT, PAYFLUXO_LISTENING_PORT } from "../../config";
 import { TorrenteWallet } from "../../payment/models/TorrenteWallet";
 import { ConnectionController } from "../ConnectionController";
+import { AuthenticationFailedNotification } from "./models/AuthenticationFailedNotification";
+import { AuthenticationNotification } from "./models/AuthenticationNotification";
 import { ConnectionNotification } from "./models/ConnectionNotification";
 import { IntentionDeclaredNotification } from "./models/IntentionDeclaredNotification";
 import { NATNotification } from "./models/NATNotification";
@@ -24,6 +26,23 @@ export class NotificationHandler {
 
     constructor(){
         NotificationHandler.instance = this;
+    }
+
+    public notifyAuthenticationFailed() {
+        const notificationObject = new AuthenticationFailedNotification()
+
+        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject())
+        ConnectionController.getConnection().send(jsonNotification)
+    }
+
+    public notifyAuthentication(certificate: string, mspId: string) {
+        const notificationObject = new AuthenticationNotification({
+            certificate: certificate,
+            orgMSPID: mspId
+        })
+
+        const jsonNotification = JSON.stringify(notificationObject.getNotificationObject())
+        ConnectionController.getConnection().send(jsonNotification)
     }
 
     public notifyDownloadDeclarationIntentionStatus(torrentId: string, status: DownloadDeclarationIntentionStatusEnum) {

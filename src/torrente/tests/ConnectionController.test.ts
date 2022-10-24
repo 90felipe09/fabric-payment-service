@@ -1,7 +1,7 @@
 import express from 'express';
 import http from 'http';
-import { UserIdentification } from '../../payment/models/UserIdentification';
 import { ConnectionController } from '../ConnectionController';
+import { IAuthenticationMessageData } from '../messages/models/AuthenticationMessage';
 import { IDownloadIntentionMessageData } from '../messages/models/DownloadIntentionMessage';
 import { DownloadDeclarationIntentionStatusEnum, NotificationHandler } from '../notification/NotificationHandler';
 import { messagesHandlerMock } from './MessagesHandlerMock';
@@ -19,10 +19,10 @@ describe("test ConnectionController class", () => {
 
     con.openConnection(messagesHandlerMock)
 
-    const identificationExample: UserIdentification = {
-        certificate: "-----BEGIN CERTIFICATE-----\nMIICljCCAjygAwIBAgIUcVFiuJI0IlYyvzwrzp1tl8KL9AswCgYIKoZIzj0EAwIw\naDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMRQwEgYDVQQK\nEwtIeXBlcmxlZGdlcjEPMA0GA1UECxMGRmFicmljMRkwFwYDVQQDExBmYWJyaWMt\nY2Etc2VydmVyMB4XDTIxMTExMzE4MjAwMFoXDTIyMTExMzE5MzcwMFowTTEcMAsG\nA1UECxMEb3JnMTANBgNVBAsTBmNsaWVudDEtMCsGA1UEAxMkNDc4MDk0YjYtMzlj\nOC00MDMwLWIxODctNmEyNWE5YTJkZDJjMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD\nQgAEW1Yx4YqWj17szSa7YsNRXSTh50xVry/FXxPdmVLySscEAYSgY62MWnIm8gD0\ntCsKYuHs2P1j7e7Nc5SxbjvWPKOB3jCB2zAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0T\nAQH/BAIwADAdBgNVHQ4EFgQUdWPmenLn4ShDvU3rEfjOhG61fe8wHwYDVR0jBBgw\nFoAUkPvuAV9ce5BMHU8yHVwNsXYMQqgwewYIKgMEBQYHCAEEb3siYXR0cnMiOnsi\naGYuQWZmaWxpYXRpb24iOiJvcmcxIiwiaGYuRW5yb2xsbWVudElEIjoiNDc4MDk0\nYjYtMzljOC00MDMwLWIxODctNmEyNWE5YTJkZDJjIiwiaGYuVHlwZSI6ImNsaWVu\ndCJ9fTAKBggqhkjOPQQDAgNIADBFAiEAv4q7FX4iyhpP4WPPwliX9qVLQCA22Pr1\nPj8fM40rMBACIDSEpKAan2GkJVNYnOe03FN2tytm9UJREkyJ2FWUo1u+\n-----END CERTIFICATE-----\n",
-        privateKey: "-----BEGIN PRIVATE KEY-----\r\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgF8UUnnRu4LJGr06y\r\n8Kdq6Opy9nHYD+pIRt7xtv9IZO6hRANCAARbVjHhipaPXuzNJrtiw1FdJOHnTFWv\r\nL8VfE92ZUvJKxwQBhKBjrYxacibyAPS0Kwpi4ezY/WPt7s1zlLFuO9Y8\r\n-----END PRIVATE KEY-----\r\n",
-        orgMSPID: "Org1MSP"
+    const credentialsExample: IAuthenticationMessageData = {
+        "encrypted_content":"wlp1ZMDffmqIuTFOmVpSftf+Gbjt3qvgUVbdfYoHsrxzaQk4zkVMAsIHZ3QoWiMrcbZMg506phs/CHkt7UiPzFWy8tq8uS+tuRUb6+QvW/7GItmkP0AKaQ8RA013scoUsjrs2IhRK2zhwpQa2Rl237Bn8jJ8z2KY6WyI9eK1lead4+1fVF2If46Pe8ryVJfxB9SRzKOAX4lcJp839J9e1hKosbqweSYK2kjt4LTn5unLKt5A7oukSHMcSqrxMhuGZstNpZ8cXRHxaEgEGBtNsFyxlAmM4K0cga1xMeFFOOn8sKFQC6tLn7O3Wyg3NQjF1V+6Y29vtoz7D0mrgQumzzC3Pxg0/cMxoQq6QTTyG4DXxqBJu8FIIBQ3GXd5enpO9SEmcvKIMPfhP3wqRB3x0uAM7Udg/0oxvVcsABkzccVHHSDnkQOS4M7Mw4yAZ5WRV8aPnlJgY7uFaaw9Zk98UZxXZonFsKeUHqku9Vci62KUQL8vMBXrX/N+NCXzmT6LZE70capjfS4savbbePNouuUiQI31iG9Tu3J++XiCyEdCBt8dziEt6VeWj+WHoPNXmEVQc1E/iaJJFCha+YxjSaTwzcIFXgvFZ5aqATBODDZuvzcVoLhd0+UySI7BTVB7yQ18CHMJIDs7pEQ0BPe0UsWllEaSws6J8L4OjOEAo7NZSb+CTysZSshnz0YhGChBOAHfUGslDWysowz5UdjmX8dTDWrapO0a6becpmaSe7R7954twW5MDdsHdF4L3Ir2Y9JkEmA+Gdy6bbGkkRgIN7HIQLALoLT/0L3gNl0KmRqDfUrhVPXqQYyfsslnQ9n0kTSAv2HLTr/eglomysln49rvr/F1WY0U9htzvwH0c9pdD1s7UeZR4ioTVd2qRRD+5AHEp8hkWapnkipOSYwOkEgWGQu4Y5m2YQfc5K44TTDbEYP/pR2yE56ufx65rZlm+q/J/peLsne3/9/9UeTSD2XnuiEKo1wcoBmFSWfFuKUaEqvbyRuZT/GuNpUa+qCnFbIxoGdJbqjdS87UAwauPa3ys9WbuKGeyTdQG5DR8HerkfZNvj7s8uRk5+kMLEyR4LkIoH0TxPRZdm6XWEYmts5e4WWFF7AuNEkxDMI/ZUnj/zFsvDIfa5dggcVT2DYwQgsj2Sh/BHvNc1BFmRr0+itBMqtWSzOb9onpuIxvYJbXNeAaPSrJudeUlaSYPqvvcq07sY3qq32zqATJdkVTJU0MSES97/is9BmCrdN+iadPR2mIvRjyktYb8hS3hFYtqD7L1LWG1rnvtN7v1ytDQ/WCVuMoPEuX8bXti1BxXxCIrLAameEtdU3g3xX7MXYMrx9ttAHbirXEU/wWQD9cyFyd7M+26s9G8zMO2BDhaeM1h/EBwiMCUsBSez0okhXch01WHR3duM6HvcLlBZLKjAlJ57xTxpDdoEz5pvWfuZ827lLt02oCdR0ebaCoIhEfHBUnH2LU5RSYPKsHLP8tUP4xLOuvsWRJVLoYml3cid2PdmWn8wKJaZ8NYF9PTgdmCnvSZej9jGTsJv1s0wVXJngxE1inqT/oesEx0v0/35wUaLmh98zdCRj0Xb13MkPb7RegtbjsW/CgdZJUi+6Hmn6hT+CbsA7vjPtj6AQOP74bE7xu/9B6gMHaRDzYos7cR0yosxMh/fpFBHj70CowmgDrDypgqqxlUFZ5NsZJuXPRR2M=",
+        "salt":"wGtpPMBXa9ri0NvHw6AIpg==",
+        "password":"batata"
     }
 
     const downloadDataExample: IDownloadIntentionMessageData = {
@@ -46,7 +46,7 @@ describe("test ConnectionController class", () => {
     })
     
     it("should test MessagesHandler class.", async () => {
-        torrenteSimulator.authenticate(identificationExample)
+        torrenteSimulator.authenticate(credentialsExample)
         torrenteSimulator.downloadBlock('127.0.0.1', 'magneticLinkTest', 15);
         torrenteSimulator.close();
         torrenteSimulator.downloadIntention(downloadDataExample);
