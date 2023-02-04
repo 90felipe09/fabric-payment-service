@@ -11,7 +11,8 @@ export const getReedemableValues = async (): Promise<number> => {
         const coinDivisor = sessionController.paymentService.coinDivisor;
         return reedemableHashesNumber * piecePrice / coinDivisor;
     }
-    catch{
+    catch (e){
+        console.log(e)
         throw (Error("[ERROR] Couldn't fetch piece price."))
     }
 }

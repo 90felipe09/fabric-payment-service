@@ -6,10 +6,16 @@ import { SessionLoader } from "../data/SessionLoader";
 import { UserIdentification } from "../models/UserIdentification";
 import { decrypt, generateKey } from "../utils/Encryption";
 
-type DecryptedCredentials = {
+type CredentialsBranch = {
     certificate: string;
-    orgMSPID: string;
-    privateKey: string
+    privateKey: string;
+}
+
+type DecryptedCredentials = {
+    credentials: CredentialsBranch;
+    mspId: string;
+    type: string,
+    version: number
 }
 
 export const handleAuthentication = (data: IAuthenticationMessageData) => {
@@ -18,9 +24,9 @@ export const handleAuthentication = (data: IAuthenticationMessageData) => {
     try{
         const decryptedObject: DecryptedCredentials = JSON.parse(decryptedContent);
         const authObject: UserIdentification = {
-            certificate: decryptedObject.certificate,
-            orgMSPID: decryptedObject.orgMSPID,
-            privateKey: decryptedObject.privateKey
+            certificate: decryptedObject.credentials.certificate,
+            orgMSPID: decryptedObject.mspId,
+            privateKey: decryptedObject.credentials.privateKey
         }
         new PayfluxoServer();
         new SessionController(authObject);
@@ -28,7 +34,7 @@ export const handleAuthentication = (data: IAuthenticationMessageData) => {
         const notificationHandler = NotificationHandler.getInstance();
     
         notificationHandler.notifyAuthentication(
-            decryptedObject.certificate, decryptedObject.orgMSPID)
+            decryptedObject.credentials.certificate, decryptedObject.mspId)
     
         SessionLoader.LoadSession(sessionController)
     }

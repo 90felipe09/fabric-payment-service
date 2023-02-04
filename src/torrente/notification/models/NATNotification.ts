@@ -9,7 +9,7 @@ export class NATNotification implements INotificationModel <INATNotifyData>{
     type: NotificationTypesEnum;
 
     constructor(data: INATNotifyData){
-        this.type = NotificationTypesEnum.NATNotifcation;
+        this.type = NotificationTypesEnum.NATNotification;
         this.data = data;
     }
 
