@@ -17,6 +17,6 @@ export const tryNatTraversal = async () => {
         await handleNatTraversalProbing();
     }
     else {
-        throw new Error(NotificationTypesEnum.NATNotifcation);
+        throw new Error(NotificationTypesEnum.NATNotification);
     }
 }

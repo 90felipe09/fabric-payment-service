@@ -1,7 +1,7 @@
 export enum NotificationTypesEnum {
     PaymentNotification = "PaymentNotification",
     ConnectionNotification = "ConnectionNotification",
-    NATNotifcation = "NATNotifcation",
+    NATNotification = "NATNotification",
     IntentionDeclaredNotification = "IntentionDeclaredNotification",
     WalletNotification = "WalletNotification",
     AuthenticationNotification = "AuthenticationNotification",
