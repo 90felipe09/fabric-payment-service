@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { getPeerHash } from "../../p2p/util/peerHash";
 import { IDownloadedBlockMessageData } from "../../torrente/messages/models/DownloadedBlockMessage";
 import { SessionController } from "../controllers/SessionController";
@@ -15,7 +16,8 @@ export const handleDownloadedBlock = async (data: IDownloadedBlockMessageData) =
             paymentHandler.paymentProtocol.activate();
         }
         else {
-            console.log("[INFO] Payment channel establishment protocol in process");
+            const console = PayfluxoConsole.getInstance();
+            console.debug("Payment channel establishment protocol in process");
             paymentHandler.payHash();
         }
     }

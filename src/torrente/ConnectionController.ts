@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
 import { TORRENTE_NOTIFICATION_PORT } from '../config';
+import { PayfluxoConsole } from '../console/Console';
 import { MessagesHandler } from './messages/MessagesHandler';
 import { MessagesHandlersMap } from './messages/models/MessagesHandlersMap';
 import { NotificationHandler } from './notification/NotificationHandler';
@@ -21,11 +22,12 @@ export class ConnectionController {
         const app = express();
         const server = http.createServer(app);
         const wss = new WebSocket.Server({ clientTracking: true, server});
+        const console = PayfluxoConsole.getInstance();
         
         return new Promise((resolve, reject) => {
             try{
                 server.listen(TORRENTE_NOTIFICATION_PORT, () => {
-                    console.log(`[INFO] Notification port open on: ${TORRENTE_NOTIFICATION_PORT}`);
+                    console.debug(`Notification port open on: ${TORRENTE_NOTIFICATION_PORT}`);
                 });
                 wss.on('connection', (ws: WebSocket) => {
                     this.handleConnection(ws, messagesHandler);
@@ -39,7 +41,7 @@ export class ConnectionController {
                
             }
             catch(e) {
-                console.log('Error:', e);
+                console.error(`${e}`);
                 reject("failed")
             }
         });
@@ -49,7 +51,8 @@ export class ConnectionController {
         ConnectionController.torrenteConnection = ws;
         new NotificationHandler();
         new MessagesHandler(messagesHandler);
-        console.log("[INFO] connected to Torrente");
+        const console = PayfluxoConsole.getInstance();
+        console.sucess("Connected to Torrente");
         NotificationHandler.getInstance().notifyConnection();
         ConnectionController.connectionResolver();
     }
@@ -73,7 +76,8 @@ export class ConnectionController {
     }
 
     handleDisconnection() {
-        console.log("[INFO] disconnected from Torrente");
+        const console = PayfluxoConsole.getInstance();
+        console.warn("disconnected from Torrente");
     }
 
     public static waitUntillDisconnection = async (): Promise<void> => {

@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { ReceiverHandler } from "../controllers/ReceiverHandler";
 
 const MINS_TO_REDEEM = 5;
@@ -18,16 +19,17 @@ export class RedeemTimer {
 
     public resetTimer = () => {
         this.timer = MINS_TO_REDEEM;
+        const console = PayfluxoConsole.getInstance();
         this.intervalObject = setInterval(async () => {
             this.timer -= 1;
             if (this.timer <= 0){
                 try{
                     await this.redeemRoutine(this.receiverHandlerReference);
-                    console.log (`[INFO] Automatic redeem succeded`);
+                    console.debug (`Automatic redeem succeded`);
                     this.stopTimer();
                 }
                 catch(e){
-                    console.log (`[ERROR] Couldn't redeem automatically: ${e}`);
+                    console.error (`Couldn't redeem automatically: ${e}`);
                     this.stopTimer();
                 }
             }

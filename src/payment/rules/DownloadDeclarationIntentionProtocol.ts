@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { IDownloadIntentionMessageData } from "../../torrente/messages/models/DownloadIntentionMessage";
 import { DownloadDeclarationIntentionStatusEnum, NotificationHandler } from "../../torrente/notification/NotificationHandler";
 import { SessionController } from "../controllers/SessionController";
@@ -8,12 +9,13 @@ export class DownloadDeclarationIntentionProtocol implements Protocol{
     downloadData: IDownloadIntentionMessageData;
 
     public activate = async () => {
-        console.log('[INFO] Initiating Download Intention Declaration protocol.')
+        const console = PayfluxoConsole.getInstance();
+        console.log('Initiating Download Intention Declaration protocol.')
         const sessionController = SessionController.getInstance();
         let declarationId = sessionController.downloadDeclarationIntentions[this.downloadData.magneticLink];
         const isValid = await this.isIntentionValid(declarationId);
         if (isValid){
-            console.log("[INFO] Already declared an intention download for this file. Ignoring request.")
+            console.warn("Already declared an intention download for this file. Ignoring request.")
             this.notifySuccessfulOperation();
         }
         else {
@@ -28,7 +30,8 @@ export class DownloadDeclarationIntentionProtocol implements Protocol{
     };
 
     private notifySuccessfulOperation = () => {
-        console.log("[INFO] Succesfully declared a download intention");
+        const console = PayfluxoConsole.getInstance();
+        console.sucess("Succesfully declared a download intention");
         const notificationHandler = NotificationHandler.getInstance();
         notificationHandler.notifyDownloadDeclarationIntentionStatus(
             this.downloadData.torrentId,
@@ -36,7 +39,8 @@ export class DownloadDeclarationIntentionProtocol implements Protocol{
     }
 
     private notifyFailingOperation = () => {
-        console.log("[ERROR] Download intention declaration failed. No funds.");
+        const console = PayfluxoConsole.getInstance();
+        console.error("Download intention declaration failed. No funds.");
         const notificationHandler = NotificationHandler.getInstance();
         notificationHandler.notifyDownloadDeclarationIntentionStatus(
             this.downloadData.torrentId,

@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { SessionController } from "../controllers/SessionController";
 
 export const getReedemableValues = async (): Promise<number> => {
@@ -12,7 +13,8 @@ export const getReedemableValues = async (): Promise<number> => {
         return reedemableHashesNumber * piecePrice / coinDivisor;
     }
     catch (e){
-        console.log(e)
+        const console = PayfluxoConsole.getInstance();
+        console.error(e)
         throw (Error("[ERROR] Couldn't fetch piece price."))
     }
 }

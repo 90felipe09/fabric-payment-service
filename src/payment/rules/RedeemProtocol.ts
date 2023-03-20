@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { ReceiverHandler } from "../controllers/ReceiverHandler";
 import { SessionController } from "../controllers/SessionController";
 import { RedeemArguments } from "../models/PaymentServiceInterface";
@@ -7,6 +8,7 @@ export class RedeemProtocol implements Protocol{
     receiverListener: ReceiverHandler;
 
     public activate = async () => {
+        const console = PayfluxoConsole.getInstance();
         const redeemArguments: RedeemArguments = {
             commitment: this.receiverListener.commitment,
             hashLink: this.receiverListener.lastHash,
@@ -17,7 +19,7 @@ export class RedeemProtocol implements Protocol{
             await paymentService.invokeRedeem(redeemArguments);
         }
         catch{
-            console.log(`[INFO] Tokens already redeemed for ${redeemArguments.commitment.commitment_hash}`)
+            console.log(`Tokens already redeemed for ${redeemArguments.commitment.commitment_hash}`)
         }
         this.receiverListener.updateRedeemableValues(
             redeemArguments.hashLink,

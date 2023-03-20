@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { IRedeemValuesMessageData } from "../../torrente/messages/models/RedeemValuesMessage";
 import { SessionController } from "../controllers/SessionController";
 import { RedeemProtocol } from "../rules/RedeemProtocol";
@@ -11,7 +12,8 @@ export const handleRedeemValues = async (_data?: IRedeemValuesMessageData) => {
             await redeemProtocol.activate();
         }
         catch{
-            console.log(`[ERROR] Couldn't redeem values for receiverlistener ${receiverListener.commitment.commitment_hash}`);
+            const console = PayfluxoConsole.getInstance();
+            console.error(`Couldn't redeem values for receiverlistener ${receiverListener.commitment.commitment_hash}`);
         }
     });
     await Promise.all(redeemPromises);

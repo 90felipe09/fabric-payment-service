@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
 import { PAYMENT_SERVICE } from "../../config";
+import { PayfluxoConsole } from '../../console/Console';
 import { PayfluxoServer } from "../../p2p/connections/PayfluxoServer";
 import { ConnectionResource } from '../../p2p/controllers/ConnectionResource';
 import { ConnectionsMap } from "../../p2p/controllers/ConnectionsMap";
@@ -113,7 +114,8 @@ export class SessionController {
     }
 
     public closeServer = () => {
-        console.log("[INFO] Closing payfluxo server")
+        const console = PayfluxoConsole.getInstance();
+        console.log("Closing payfluxo server")
         this.loadedUserKey = "";
         this.loadedUserCertificate = "";
         this.loadedUserMSP = "";

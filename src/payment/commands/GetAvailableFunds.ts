@@ -7,5 +7,6 @@ export const getAvailableFunds = async (): Promise<number> => {
     const account = await sessionController.paymentService.evaluateAccount(accountId);
     const coinDivisor = sessionController.paymentService.coinDivisor;
     const availableFunds: number = parseFloat(account.balance) / coinDivisor;
+    const escrowTokens = account.tokens;
     return availableFunds;
 }

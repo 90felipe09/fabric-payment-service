@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { PayfluxoConsole } from "../../console/Console";
 import { SessionController } from "../../payment/controllers/SessionController";
 import { CommitmentReceivementWaiter } from "../../payment/rules/CommitmentReceivementProtocol";
 import { CertificateRequest } from "../models/CertificateRequest";
@@ -28,10 +29,11 @@ export class ConnectionResource implements PayfluxoInterface {
     }
 
     private handleIncomingMessage = (data: WebSocket.Data) => {
-        console.log(`[INFO] Received message from ${this.ip}:${this.port}`)
+        const console = PayfluxoConsole.getInstance();
+        console.debug(`Received message from ${this.ip}:${this.port}`)
         const requestObject: IPayfluxoRequestModel<any> = JSON.parse(data.toString())
         const requestType: string = requestObject.type;
-        console.log(`[INFO] Type: ${requestType}`)
+        console.debug(`Type: ${requestType}`)
         switch (requestType){
             case PayfluxoRequestsTypesEnum.CommitmentMessage:
                 const commitmentReceivementProtocol = new CommitmentReceivementWaiter(this);

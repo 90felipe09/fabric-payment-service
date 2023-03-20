@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { ConnectionNotifier } from "../../p2p/controllers/ConnectionNotifier";
 import { ConnectionResource } from "../../p2p/controllers/ConnectionResource";
 import { MicropaymentRequest } from "../../p2p/models/MicropaymentRequest";
@@ -24,8 +25,9 @@ export class MicroPaymentProtocol implements Protocol{
     }
 
     private sendMicroPayment = (message: MicropaymentRequest) => {
+        const console = PayfluxoConsole.getInstance();
         this.connection.sendPayment(message.hashLink, message.hashLinkIndex, message.magneticLink)
-        console.log(`[INFO] Paid for a block from torrent ${message.magneticLink} to ${this.connection.peerHash}`)
+        console.debug(`Paid for a block from torrent ${message.magneticLink} to ${this.connection.peerHash}`)
     }
 
     constructor (paymentHandler: PaymentHandler, connection: ConnectionResource) {
@@ -40,13 +42,14 @@ export class ReceiveMicropaymentWaiter implements Observer {
 
     update(subject: ConnectionNotifier): void {
         const message = subject.getMessage<MicropaymentRequest>();
+        const console = PayfluxoConsole.getInstance();
         if (message.type === PayfluxoRequestsTypesEnum.MicroPaymentRequest){
             const micropaymentRequest = subject.getMessage<MicropaymentRequest>().data;
             if (this.receiverListener.lastHashIndex >= micropaymentRequest.hashLinkIndex){
-                console.log(`[INFO] Received paymemnt out of order: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}.`)
+                console.debug(`Received paymemnt out of order: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}.`)
             }
             else if (this.receiverListener.verifyPayment(micropaymentRequest.hashLink, micropaymentRequest.hashLinkIndex)){
-                console.log(`[INFO] Received valid payment: ${micropaymentRequest.hashLinkIndex}.`)
+                console.debug(`Received valid payment: ${micropaymentRequest.hashLinkIndex}.`)
                 const notificationHandler = NotificationHandler.getInstance();
                 notificationHandler.notifyPayment({
                     blocksPaid: micropaymentRequest.hashLinkIndex,
@@ -55,7 +58,7 @@ export class ReceiveMicropaymentWaiter implements Observer {
                 })
             }
             else{
-                console.log(`[INFO] Invalid payment: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}`)
+                console.debug(`Invalid payment: ${micropaymentRequest.hashLinkIndex}/${this.receiverListener.lastHashIndex}`)
             }
         }
     }

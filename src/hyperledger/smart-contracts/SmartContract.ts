@@ -1,4 +1,5 @@
 import { Contract } from 'fabric-network';
+import { PayfluxoConsole } from '../../console/Console';
 import { UserIdentification } from '../../payment/models/UserIdentification';
 import { GatewayConnection } from "../connections/GatewayConnection";
 
@@ -18,35 +19,38 @@ export class SmartContract {
     }
 
     public init = async () => {
+        const console = PayfluxoConsole.getInstance();
         try{
-            console.log(`[INFO] Fetching chaincode reference for ${this.smartContractName}`)
+            console.debug(`Fetching chaincode reference for ${this.smartContractName}`)
             this.contract = await this.gatewayConnection.getMicropaymentChaincodeReference(this.smartContractName);
-            console.log(`[INFO] Contract reference obtained: ${this.contract.chaincodeId}`)
+            console.sucess(`Contract reference obtained: ${this.smartContractName}:${this.contract.chaincodeId}`)
         }
         catch (error){
-            console.log(`[ERROR] Couldn't fetch contract reference: ${error}`)
+            console.error(`Couldn't fetch contract reference: ${error}`)
         }
     };
 
     protected invokeTransaction = async (name: string, args: any[]): Promise<any> => {
+        const console = PayfluxoConsole.getInstance();
         try {
-            console.log(`[INFO] Perform transaction invoke ${name}(${args})`)
+            console.debug(`Perform transaction invoke ${name}(${args})`)
             return JSON.parse((await this.contract.submitTransaction(name, ...args)).toString());
         } catch (error) {
-            console.log(`[ERROR] Smart Contract error: ${error}`)
+            console.error(`[ERROR] Smart Contract error: ${error}`)
             throw error
         }
     }
 
     protected evaluateTransaction = async (name: string, args: any[]): Promise<any> => {
+        const console = PayfluxoConsole.getInstance();
         try {
-            console.log(`[INFO] Perform transaction evaluation ${name}(${args})`)
+            console.debug(`[INFO] Perform transaction evaluation ${name}(${args})`)
             const transactionResponse = await this.contract.evaluateTransaction(name, ...args);
             const stringfiedResponse = transactionResponse.toString();
             const jsonObject = JSON.parse(stringfiedResponse);
             return jsonObject;
         } catch (error) {
-            console.log(`[ERROR] Smart Contract error: ${error}`)
+            console.error(`[ERROR] Smart Contract error: ${error}`)
             throw error
         }
     }

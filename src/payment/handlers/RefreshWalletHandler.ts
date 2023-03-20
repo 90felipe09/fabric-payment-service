@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { IRefreshWalletMessageData } from "../../torrente/messages/models/RefreshWalletMessage";
 import { NotificationHandler } from "../../torrente/notification/NotificationHandler";
 import { getWallet } from "../commands/GetWallet";
@@ -11,6 +12,7 @@ export const handleRefreshWallet = async (_data?: IRefreshWalletMessageData) => 
         notificationHandler.notifyWalletRefresh(accountWallet);
     }
     catch(e){
-        console.log(`[ERROR] Couldn't fetch wallet state: ${e}`);
+        const console = PayfluxoConsole.getInstance();
+        console.error(`Couldn't fetch wallet state: ${e}`);
     }
 }

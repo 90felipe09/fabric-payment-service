@@ -5,16 +5,18 @@ import { TORRENTE_SESSIONS_SAVE_FOLDER } from "../../config";
 import { SessionController } from "../controllers/SessionController";
 import { PayerHandlerData, ReceiverHandlerData, SessionData } from "./SessionData";
 import { homedir } from "os";
+import { PayfluxoConsole } from "../../console/Console";
 
 export class SessionLoader {
     public static LoadSession(sessionController: SessionController){
+        const console = PayfluxoConsole.getInstance();
         const certificate = sessionController.loadedUserCertificate;
         const privateKey = sessionController.loadedUserKey
         
         const sessionToRecover = `${homedir()}/${TORRENTE_SESSIONS_SAVE_FOLDER}/${sha256(certificate)}.pay`;
         fs.readFile(sessionToRecover, 'utf8', function (err,data) {
             if (err) {
-              return console.log("[INFO] New user");
+              return console.debug("New user");
             }
             const keyToDecrypt = sha256(privateKey).toString();
 
@@ -22,8 +24,7 @@ export class SessionLoader {
 
             const sessionData: SessionData = JSON.parse(decryptedData);
 
-            console.log("[INFO] loaded session content:\n");
-            console.log(sessionData);
+            console.sucess("Loaded session content");
 
             sessionData.payerHandlers.map((payerHandler: PayerHandlerData) => {
                 sessionController.recoverPaymentHandler(

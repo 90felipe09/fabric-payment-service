@@ -8,6 +8,7 @@ import { getConnectionHash } from '../util/peerHash';
 import { ConnectionResource } from '../controllers/ConnectionResource';
 import { ConnectionController } from '../../torrente/ConnectionController';
 import { NotificationHandler } from '../../torrente/notification/NotificationHandler';
+import { PayfluxoConsole } from '../../console/Console';
 
 
 export class PayfluxoServer {
@@ -41,20 +42,22 @@ export class PayfluxoServer {
         }
         PayfluxoServer.wss = new WebSocket.Server(serverParams);
 
+        const console = PayfluxoConsole.getInstance();
+
         PayfluxoServer.server.listen(PAYFLUXO_LISTENING_PORT, () => {
-            console.log(`[INFO] Payfluxo started on port: ${PAYFLUXO_LISTENING_PORT}`);
+            console.debug(`Payfluxo started on port: ${PAYFLUXO_LISTENING_PORT}`);
         })
 
         tryNatTraversal().catch(async(err) => {
             await ConnectionController.waitUntillConnection();
             NotificationHandler.getInstance().notifyNATIssue();
-            console.log("[ERROR]: ", err.message);
+            console.warn(`${err.message}`);
         });
 
         PayfluxoServer.wss.on('connection', (ws: WebSocket, httpRequest: http.IncomingMessage) => {
             const requesterIp = httpRequest.socket.localAddress;
             const requesterPort = httpRequest.socket.localPort;
-            console.log(`[INFO] Connected to incoming connection from ${requesterIp}:${requesterPort}`);
+            console.debug(`Connected to incoming connection from ${requesterIp}:${requesterPort}`);
             const connectionHash = getConnectionHash(requesterIp, requesterPort)
             PayfluxoServer.connectionsMap.addConnection(connectionHash, ws, requesterIp, requesterPort)
             const connectionResources = PayfluxoServer.connectionsMap.getConnection(connectionHash)
@@ -90,7 +93,8 @@ export class PayfluxoServer {
     }
 
     private static handleCloseConnection = (connectionResources: ConnectionResource) => {
-        console.log(`[INFO] Closed connection with ${connectionResources.ip}:${connectionResources.port}`);
+        const console = PayfluxoConsole.getInstance();
+        console.debug(`Closed connection with ${connectionResources.ip}:${connectionResources.port}`);
         PayfluxoServer.connectionsMap.removeConnection(connectionResources.peerHash);
     }
 }

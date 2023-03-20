@@ -1,3 +1,4 @@
+import { PayfluxoConsole } from "../../console/Console";
 import { PayfluxoServer } from "../../p2p/connections/PayfluxoServer";
 import { IAuthenticationMessageData } from "../../torrente/messages/models/AuthenticationMessage";
 import { NotificationHandler } from "../../torrente/notification/NotificationHandler";
@@ -37,6 +38,8 @@ export const handleAuthentication = (data: IAuthenticationMessageData) => {
             decryptedObject.credentials.certificate, decryptedObject.mspId)
     
         SessionLoader.LoadSession(sessionController)
+        const console = PayfluxoConsole.getInstance();
+        console.enableCommands();
     }
     catch(e){
         const notificationHandler = NotificationHandler.getInstance();
